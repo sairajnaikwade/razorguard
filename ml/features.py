@@ -117,11 +117,11 @@ class FeatureEngineer:
         df_time = df_sorted.set_index("timestamp")
         
         # Rolling count in past 5m
-        rolling_5m = df_time.groupby("customer_id").rolling("5Min")["transaction_id"].count()
+        rolling_5m = df_time.groupby("customer_id").rolling("5min")["transaction_id"].count()
         # Rolling count in past 1h
-        rolling_1h = df_time.groupby("customer_id").rolling("1H")["transaction_id"].count()
+        rolling_1h = df_time.groupby("customer_id").rolling("1h")["transaction_id"].count()
         # Rolling amount in past 1h
-        rolling_amt_1h = df_time.groupby("customer_id").rolling("1H")["amount"].sum()
+        rolling_amt_1h = df_time.groupby("customer_id").rolling("1h")["amount"].sum()
         
         # Re-align: drop the customer_id group level, restore the original integer index
         # The inner index after groupby rolling is the timestamp; df_time's index maps

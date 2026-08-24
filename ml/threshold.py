@@ -90,8 +90,8 @@ class BusinessCostModel:
         plt.plot(df_results["threshold"], df_results["fn_cost"], color="#ef4444", linestyle=":", label="False Negative Cost")
         
         plt.title("Threshold Optimization vs Business Cost", fontsize=14, color="white", pad=15)
-        plt.xlabel("Classification Threshold", fontsize=12, color="slate-400")
-        plt.ylabel("Expected Business Cost (₹)", fontsize=12, color="slate-400")
+        plt.xlabel("Classification Threshold", fontsize=12, color="#94a3b8")
+        plt.ylabel("Expected Business Cost (₹)", fontsize=12, color="#94a3b8")
         plt.grid(True, color="#334155", linestyle="-", linewidth=0.5)
         plt.legend(loc="upper right", frameon=True, facecolor="#0f172a", edgecolor="#1e293b")
         
