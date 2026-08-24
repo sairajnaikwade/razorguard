@@ -123,20 +123,17 @@ class FeatureEngineer:
         # Rolling amount in past 1h
         rolling_amt_1h = df_time.groupby("customer_id").rolling("1h")["amount"].sum()
         
-        # Re-align: drop the customer_id group level, restore the original integer index
-        # The inner index after groupby rolling is the timestamp; df_time's index maps
-        # back to the original integer positions via df_sorted's row order.
-        def _realign(rolling_series, df_ref):
-            """Safely align a groupby-rolling result back to the original integer-indexed df."""
-            s = rolling_series.reset_index(level=0, drop=True)  # drop customer_id level
-            # s is now indexed by timestamp (from df_time). Since df_time was created
-            # from df_sorted which has a unique integer index, we can recover that index.
-            s.index = df_ref.index  # assign back the integer index from df_sorted
-            return s
-
-        aligned_5m = _realign(rolling_5m, df_sorted)
-        aligned_1h = _realign(rolling_1h, df_sorted)
-        aligned_amt_1h = _realign(rolling_amt_1h, df_sorted)
+        # Realignment: groupby processes groups in alphabetical order of keys (customer_id).
+        # Chronological order within each group is preserved. Thus, mapping back is done by
+        # gathering the original index positions grouped by customer_id and sorting the series.
+        df_grouped = df_sorted.groupby("customer_id")
+        orig_indices = []
+        for _, group in df_grouped:
+            orig_indices.extend(group.index.values)
+            
+        aligned_5m = pd.Series(rolling_5m.values, index=orig_indices).sort_index()
+        aligned_1h = pd.Series(rolling_1h.values, index=orig_indices).sort_index()
+        aligned_amt_1h = pd.Series(rolling_amt_1h.values, index=orig_indices).sort_index()
         
         # Shift rolling counts by 1 inside group to exclude the current transaction
         df_sorted["transactions_last_5m"] = aligned_5m.groupby(df_sorted["customer_id"]).shift(1).fillna(0).values
