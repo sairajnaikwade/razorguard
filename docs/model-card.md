@@ -57,7 +57,7 @@ Actual results obtained from evaluating the locked Random Forest model on the un
 | Recall | 1.0000 |
 | F1 Score | 0.9843 |
 | ROC-AUC | 1.0000 |
-| PR-AUC | 0.9992 |
+| PR-AUC | 0.9993 |
 
 ## Confusion Matrix
 
