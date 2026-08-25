@@ -14,8 +14,7 @@ Phase 2 will add columns for:
 """
 
 import uuid
-
-from sqlalchemy import Column, DateTime, Numeric, String, Uuid
+from sqlalchemy import Column, DateTime, Numeric, String, Uuid, Float
 from sqlalchemy.sql import func
 
 from app.models.base import Base
@@ -31,8 +30,20 @@ class Transaction(Base):
     amount = Column(Numeric(15, 2), nullable=False)
     currency = Column(String(3), nullable=False, default="INR")
     status = Column(String(20), nullable=False, default="pending")
+    
+    # ML Scoring Metadata & Outputs
+    device_id = Column(String(100), nullable=True)
+    payment_method = Column(String(50), nullable=True)
+    country = Column(String(10), nullable=True)
+    
+    fraud_probability = Column(Float, nullable=True)
+    risk_level = Column(String(20), nullable=True)
+    decision = Column(String(20), nullable=True)
+    model_version = Column(String(100), nullable=True)
+    scored_at = Column(DateTime(timezone=True), nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     def __repr__(self):
-        return f"<Transaction {self.transaction_id} amount={self.amount}>"
+        return f"<Transaction {self.transaction_id} amount={self.amount} risk={self.risk_level}>"

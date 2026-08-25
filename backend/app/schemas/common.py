@@ -8,3 +8,4 @@ class HealthResponse(BaseModel):
     status: str
     database: str
     redis: str
+    ml_model: str
