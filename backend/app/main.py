@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import admin, audit, auth, health, ml, transactions
+from app.api import admin, ai_agent, audit, auth, health, ml, transactions
 from app.core.config import settings
 from app.services.ml_service import get_default_service
 
@@ -47,3 +47,4 @@ app.include_router(health.router, prefix="/api", tags=["System"])
 app.include_router(transactions.router, prefix="/api", tags=["Transactions"])
 app.include_router(ml.router, prefix="/api", tags=["ML"])
 app.include_router(audit.router, prefix="/api", tags=["Audit"])
+app.include_router(ai_agent.router, prefix="/api", tags=["AI Agent"])
