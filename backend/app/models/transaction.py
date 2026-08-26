@@ -14,10 +14,14 @@ Phase 2 will add columns for:
 """
 
 import uuid
-from sqlalchemy import Column, DateTime, Numeric, String, Uuid, Float
+from sqlalchemy import Column, DateTime, Numeric, String, Uuid, Float, JSON
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from app.models.base import Base
+
+# JSONB on PostgreSQL, plain JSON elsewhere (e.g. SQLite test database).
+RiskSignalsJSON = JSONB().with_variant(JSON(), "sqlite")
 
 
 class Transaction(Base):
@@ -41,6 +45,9 @@ class Transaction(Base):
     decision = Column(String(20), nullable=True)
     model_version = Column(String(100), nullable=True)
     scored_at = Column(DateTime(timezone=True), nullable=True)
+    # Human-readable risk signals derived at scoring time (Phase 4).
+    # Nullable: rows scored before this column existed have no stored signals.
+    risk_signals = Column(RiskSignalsJSON, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

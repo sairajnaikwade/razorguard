@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     # App
     APP_ENV: str = "development"
 
+    # Expected-loss estimation (live dashboard) — business cost assumptions.
+    # Mirrors ml/threshold.py BusinessCostModel: a flagged (non-ALLOW)
+    # transaction carries an analyst review cost when it turns out legitimate;
+    # an allowed transaction risks losing its full amount if it is fraudulent.
+    # Override via environment variable in deployments.
+    EXPECTED_LOSS_FP_COST: float = 50.0
+
     model_config = SettingsConfigDict(
         env_file=_resolve_env_files() or (".env",),
         extra="ignore",

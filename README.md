@@ -2,7 +2,7 @@
 
 RazorGuard is an AI-powered payment fraud detection and investigation platform built for the **Razorpay AI Buildathon — Track 02**.
 
-Phase 1 provides the operational foundation: authentication, role-based access control, health monitoring, database migrations, Docker orchestration, and a React dashboard shell. ML training, fraud scoring APIs, and analyst workflows are planned for later phases.
+Phase 1 provides the operational foundation: authentication, role-based access control, health monitoring, database migrations, Docker orchestration , and a React dashboard shell. ML training, fraud scoring APIs, and analyst workflows are planned for later phases.
 
 ## Current Project Status
 
