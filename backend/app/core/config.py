@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # Gemini AI
     GEMINI_API_KEY: str | None = None
-    GEMINI_MODEL: str = "gemini-1.5-flash"
+    GEMINI_MODEL: str = "gemini-2.0-flash"
 
     # App
     APP_ENV: str = "development"

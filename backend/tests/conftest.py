@@ -14,6 +14,9 @@ from app.models.user import User
 from app.core.security import hash_password, create_access_token
 from app.core.config import settings
 
+# Force offline/mock mode for AI tests — never call the live Gemini API from tests.
+settings.GEMINI_API_KEY = None
+
 # Test database
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

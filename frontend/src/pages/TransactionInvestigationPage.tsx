@@ -9,6 +9,7 @@ import {
   type Transaction,
   type TransactionDetail,
 } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 import Card from '../components/ui/Card';
 import Badge, { decisionVariant, riskLevelVariant } from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
@@ -18,6 +19,7 @@ import TableSkeleton from '../components/ui/TableSkeleton';
 import ProbabilityGauge from '../components/charts/ProbabilityGauge';
 import RiskSignalsList from '../components/transactions/RiskSignalsList';
 import AuditTimeline from '../components/transactions/AuditTimeline';
+import AiInvestigationPanel from '../components/transactions/AiInvestigationPanel';
 
 function fmtMoney(amount: number, currency: string): string {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency }).format(amount);
@@ -41,6 +43,8 @@ function fmtTimestamp(value: string | null): string {
 
 export default function TransactionInvestigationPage() {
   const { transactionId } = useParams<{ transactionId: string }>();
+  const { user } = useAuthStore();
+  const canGenerate = user?.role === 'ADMIN' || user?.role === 'ANALYST';
   const [txn, setTxn] = useState<TransactionDetail | null>(null);
   const [history, setHistory] = useState<Transaction[] | null>(null);
   const [auditEvents, setAuditEvents] = useState<AuditEvent[] | null>(null);
@@ -250,6 +254,14 @@ export default function TransactionInvestigationPage() {
             </h2>
             <AuditTimeline events={auditEvents} loading={auditLoading} />
           </Card>
+
+          {/* AI Investigation — Phase 5 */}
+          {transactionId && (
+            <AiInvestigationPanel
+              transactionId={transactionId}
+              canGenerate={canGenerate}
+            />
+          )}
         </div>
       </div>
     </div>

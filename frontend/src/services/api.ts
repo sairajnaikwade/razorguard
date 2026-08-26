@@ -125,6 +125,17 @@ export interface HealthStatus {
   ml_model: string;
 }
 
+/** Mirrors app.schemas.ai.AIInvestigationResponse */
+export interface AIInvestigationReport {
+  summary: string;
+  key_evidence: string[];
+  risk_reasoning: string;
+  recommended_action: string;
+  confidence: number;
+  limitations: string[];
+  is_mock: boolean;
+}
+
 /** Mirrors app.schemas.transaction.TransactionScoreRequest */
 export interface ScoreRequest {
   transaction_id: string;
@@ -258,5 +269,27 @@ export const healthApi = {
       }
       throw err;
     }
+  },
+};
+
+export const investigateApi = {
+  /** Generate (or serve cached) AI investigation report. ANALYST/ADMIN only. */
+  generate: async (
+    transactionId: string,
+    regenerate = false,
+  ): Promise<AIInvestigationReport> => {
+    const { data } = await api.post<AIInvestigationReport>(
+      `/transactions/${encodeURIComponent(transactionId)}/investigate`,
+      null,
+      { params: regenerate ? { regenerate: true } : undefined },
+    );
+    return data;
+  },
+  /** Fetch an already-generated report. VIEWER-accessible. */
+  fetch: async (transactionId: string): Promise<AIInvestigationReport> => {
+    const { data } = await api.get<AIInvestigationReport>(
+      `/transactions/${encodeURIComponent(transactionId)}/investigate`,
+    );
+    return data;
   },
 };
