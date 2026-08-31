@@ -17,6 +17,10 @@ from app.core.config import settings
 # Force offline/mock mode for AI tests — never call the live Gemini API from tests.
 settings.GEMINI_API_KEY = None
 
+# Disable Redis-backed rate limiting in tests — we test it explicitly in
+# test_security.py using its own controlled setup.
+settings.RATE_LIMIT_ENABLED = False
+
 # Test database
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

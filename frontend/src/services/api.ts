@@ -192,6 +192,7 @@ export interface TransactionQueryParams {
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  timeout: 30_000, // 30 s — prevents requests hanging indefinitely
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {

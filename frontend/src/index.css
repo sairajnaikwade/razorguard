@@ -1,14 +1,233 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────────────────
+   RAZORGUARD DESIGN TOKENS
+   Reference palette:
+     Background  #06101F   (body/app shell)
+     Panel       #0B1728   (cards, sidebar)
+     Border      #142238   (all borders — subtle 1px)
+     Primary     #3B82F6   (interactive: buttons, links, active nav)
+     Critical    #EF4444
+     High        #F97316
+     Medium      #EAB308
+     Low/Healthy #22C55E
+   No purple, no cyan gradients, no glassmorphism, no excessive glow.
+───────────────────────────────────────────────────────────────────────── */
 @theme {
-  --color-dark: #0F172A;
-  --color-primary: #3B82F6;
-  --color-risk-critical: #EF4444;
-  --color-risk-high: #F97316;
-  --color-risk-medium: #EAB308;
-  --color-risk-low: #22C55E;
+  --color-bg:             #06101F;
+  --color-panel:          #0B1728;
+  --color-border:         #142238;
+
+  --color-dark:           #06101F;
+  --color-dark-surface:   #0B1728;
+  --color-dark-card:      #0B1728;
+  --color-dark-border:    #142238;
+
+  --color-primary:        #3B82F6;
+  --color-primary-dim:    #2563EB;
+  --color-primary-hover:  #60A5FA;
+
+  --color-risk-critical:  #EF4444;
+  --color-risk-high:      #F97316;
+  --color-risk-medium:    #EAB308;
+  --color-risk-low:       #22C55E;
 }
 
+/* ─── Reset ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+}
+
+html, body { overflow-x: hidden; max-width: 100%; }
+
 body {
-  @apply bg-dark text-slate-200 antialiased;
+  background-color: #06101F;
+  color: #CBD5E1;
+  min-height: 100dvh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar          { width: 5px; height: 5px; }
+::-webkit-scrollbar-track    { background: #06101F; }
+::-webkit-scrollbar-thumb    { background: #1E3A5F; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2A4E7A; }
+
+/* ─── Selection / focus ─────────────────────────────────────────────────── */
+::selection { background: rgba(59,130,246,0.25); color: #fff; }
+:focus-visible { outline: 2px solid rgba(59,130,246,0.5); outline-offset: 2px; }
+
+/* ─── Table ─────────────────────────────────────────────────────────────── */
+table { border-collapse: collapse; }
+tbody tr { transition: background-color 0.08s ease; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KEYFRAMES  (minimal — entrance + skeleton only)
+═══════════════════════════════════════════════════════════════════════════ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes drawerIn {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+@keyframes inputShake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-5px); }
+  40%       { transform: translateX(5px); }
+  60%       { transform: translateX(-3px); }
+  80%       { transform: translateX(3px); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+/* Login-only animations */
+@keyframes logoBreathe {
+  0%, 100% { filter: drop-shadow(0 0 16px rgba(59,130,246,0.35)); }
+  50%       { filter: drop-shadow(0 0 28px rgba(59,130,246,0.55)); }
+}
+@keyframes logoGlowOuter {
+  0%, 100% { opacity: 0.45; }
+  50%       { opacity: 0.70; }
+}
+@keyframes logoGlowInner {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 0.85; }
+}
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* ── Gauge arc (ProbabilityGauge) ──────────────────────────────────── */
+@keyframes gaugeArc {
+  from { stroke-dashoffset: 314; }
+  to   { stroke-dashoffset: var(--arc-offset); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+═══════════════════════════════════════════════════════════════════════════ */
+.animate-fade-in   { animation: fadeIn   0.18s ease-out both; }
+.animate-slide-up  { animation: slideUp  0.22s ease-out both; }
+.animate-spin      { animation: spin 0.7s linear infinite; }
+.animate-shake     { animation: inputShake 0.38s ease-out; }
+.animate-pulse     { animation: shimmer 1.8s ease-in-out infinite; }
+
+/* Mobile drawer slide-in */
+.animate-in        { animation: drawerIn  0.22s cubic-bezier(0.16,1,0.3,1) both; }
+/* Modal backdrop */
+.modal-backdrop    { animation: backdropIn 0.15s ease-out both; }
+/* Modal panel */
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(12px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+.modal-panel { animation: modalIn 0.22s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* Route page transition */
+.route-animate { animation: slideUp 0.18s ease-out both; }
+
+/* Login-page only (kept isolated) */
+.logo-breathe    { animation: logoBreathe   3.5s ease-in-out infinite; }
+.logo-glow-outer { animation: logoGlowOuter 3.5s ease-in-out infinite; }
+.logo-glow-inner { animation: logoGlowInner 3.5s ease-in-out 0.2s infinite; }
+.animate-card-in { animation: cardEntrance  0.46s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* Gauge arc */
+.gauge-arc { animation: gaugeArc 1s cubic-bezier(0.34,1.56,0.64,1) 0.2s both; }
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(11,23,40,0.9) 25%,
+    rgba(20,34,56,0.7) 50%,
+    rgba(11,23,40,0.9) 75%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 1.8s infinite linear;
+}
+
+/* Sidebar active nav indicator (left bar) */
+.nav-indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 55%;
+  border-radius: 0 2px 2px 0;
+  background: #3B82F6;
+}
+
+/* Section label */
+.section-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #64748B;
+}
+
+/* Monospace for IDs and technical values */
+.mono-id {
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.01em;
+}
+
+/* Table row semantic tints */
+.row-critical      { background: rgba(239,68,68,0.04); }
+.row-critical:hover { background: rgba(239,68,68,0.08) !important; }
+.row-high          { background: rgba(249,115,22,0.03); }
+.row-high:hover    { background: rgba(249,115,22,0.07) !important; }
+
+/* Responsive table scroll */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+/* Mobile / desktop show-hide helpers */
+@media (max-width: 639px) {
+  .hide-on-mobile  { display: none !important; }
+  .show-on-mobile  { display: block !important; }
+}
+@media (min-width: 640px) {
+  .hide-on-desktop { display: none !important; }
+}
+
+/* Modals: cap height on small screens */
+@media (max-width: 639px) {
+  .modal-panel { max-height: 95dvh; }
+}
+
+/* ─── REDUCED MOTION ────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:       0.01ms !important;
+    animation-iteration-count: 1    !important;
+    transition-duration:      0.01ms !important;
+    scroll-behavior: auto           !important;
+  }
 }

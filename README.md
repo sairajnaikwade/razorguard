@@ -1,190 +1,270 @@
 # RazorGuard
 
-RazorGuard is an AI-powered payment fraud detection and investigation platform built for the **Razorpay AI Buildathon — Track 02**.
+RazorGuard is an AI-powered payment fraud detection and investigation platform built for the **Razorpay AI Buildathon — Track 02: AI Risk Manager**.
 
-Phase 1 provides the operational foundation: authentication, role-based access control, health monitoring, database migrations, Docker orchestration , and a React dashboard shell. ML training, fraud scoring APIs, and analyst workflows are planned for later phases.
+It combines machine learning fraud scoring, behavioral risk intelligence, and AI-assisted investigation to help analysts detect and review suspicious transactions.
 
-## Current Project Status
+## Problem
 
-| Phase | Scope | Status |
-|-------|--------|--------|
-| **Phase 1** | Foundation (API, auth, RBAC, DB, Docker, frontend shell) | Complete (hardened) |
-| **Phase 2** | Data pipeline + ML model training | Planned |
-| **Phase 3+** | Fraud APIs, dashboards, investigation UI, AI agent | Planned |
+Payment fraud detection requires:
+- real-time risk scoring
+- account history and behavioral signals
+- transparency for analyst review
+- secure access controls
+- auditability of decisions
+
+## Solution
+
+RazorGuard uses a machine learning pipeline with a human-in-the-loop review workflow.
+
+```text
+Transaction
+   ↓
+Feature engineering
+   ↓
+Random Forest scoring
+   ↓
+Risk classification + signals
+   ↓
+Analyst dashboard review
+   ↓
+AI investigation (optional)
+   ↓
+Audit trail
+```
+
+## Key Features
+
+### Machine learning fraud detection
+- Random Forest classifier
+- 20 engineered behavioral features
+- time-safe feature engineering without future look-ahead
+- fraud probability scoring in the range [0.0, 1.0]
+- decision threshold fixed at 0.30
+
+### Risk intelligence
+- LOW / MEDIUM / HIGH / CRITICAL classification
+- human-readable risk signals such as:
+  - multiple recent failures
+  - new device
+  - unusual country
+  - country or payment method change
+  - high transaction velocity
+  - unusual hour
+  - amount much higher than historical average
+
+### AI-assisted investigation
+- Gemini integration via Google GenAI SDK
+- optional mock fallback for local/offline runs
+- investigation context includes transaction details and audit trail
+- generated recommendations with confidence and limitations
+
+### Dashboard and security
+- React + TypeScript frontend
+- login and profile APIs
+- role-based access control
+- Redis-backed login rate limiting
+- audit trail for tracked actions
+- PostgreSQL storage and Docker Compose setup
 
 ## Architecture
 
-```
-Browser
-  └── Frontend (React + Vite + nginx)
-        └── /api/*  ──proxy──▶  Backend (FastAPI)
-                                    ├── PostgreSQL
-                                    └── Redis
-```
+```mermaid
+graph TB
+    U[User / Analyst]
+    F[Frontend\nReact + TypeScript + Vite]
+    N[Nginx]
+    B[Backend\nFastAPI + SQLAlchemy]
+    M[ML Service\nRandom Forest + feature engineering]
+    A[AI Investigation\nGemini / mock fallback]
+    P[PostgreSQL]
+    R[Redis]
 
-- **Backend:** FastAPI, SQLAlchemy (async), Alembic, JWT + Argon2, RBAC
-- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Zustand
-- **Data:** PostgreSQL for persistence; Redis for health/connectivity (Phase 2+ usage)
-- **ML:** Scaffolding in `ml/` (not trained in Phase 1)
+    U --> F
+    F --> N
+    N --> B
+    B --> M
+    B --> A
+    B --> P
+    B --> R
+```
 
 ## Technology Stack
 
 | Layer | Technologies |
-|-------|--------------|
-| API | FastAPI, Uvicorn, Pydantic |
-| Database | PostgreSQL 15, SQLAlchemy 2, Alembic |
+|---|---|
+| Backend | FastAPI, Uvicorn, Pydantic 2, SQLAlchemy 2 |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS, Zustand |
+| Database | PostgreSQL 15, SQLite (testing) |
 | Cache | Redis 7 |
-| Auth | JWT (python-jose), Argon2 (pwdlib) |
-| Frontend | React, Vite, TypeScript, Tailwind, Axios |
-| ML (Phase 2) | pandas, numpy, scikit-learn, joblib, matplotlib |
-| Containers | Docker Compose |
+| Auth | JWT, Argon2, RBAC |
+| ML | scikit-learn, pandas, numpy, joblib |
+| AI | Google GenAI SDK |
+| Container | Docker Compose |
 
-## Local Setup
+## Model performance
+
+The repository contains model metadata with held-out test metrics for the trained Random Forest model:
+
+| Metric | Value |
+|---|---:|
+| Accuracy | 99.9% |
+| Precision | 96.9% |
+| Recall | 100% |
+| F1 Score | 98.4% |
+| ROC-AUC | 99.99% |
+| PR-AUC | 99.93% |
+
+Validation comparison in the project metadata includes:
+
+| Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
+|---|---:|---:|---:|---:|---:|
+| Random Forest | 99.87% | 97.62% | 97.62% | 97.62% | 99.99% |
+| Logistic Regression | 99.37% | 81.55% | 100% | 89.84% | 99.93% |
+| Isolation Forest | 93.33% | 29.58% | 100% | 45.65% | 99.83% |
+
+These metrics are based on the synthetic evaluation data included in the repository and are intended to demonstrate ML capability in the project context.
+
+## API overview
+
+### Authentication
+- POST /api/auth/login
+- GET /api/auth/me
+
+### Transactions
+- POST /api/transactions/score
+- GET /api/transactions
+- GET /api/transactions/{id}
+
+### ML and health
+- GET /api/ml/status
+- GET /api/ml/metrics
+- GET /api/system/health
+
+### AI and audit
+- POST /api/transactions/{id}/investigate
+- GET /api/audit
+
+### Admin
+- GET /api/admin/users
+- GET /api/admin/stats
+- GET /api/system/info
+
+## Example predictions
+
+### Fraudulent transaction
+```json
+{
+  "fraud_probability": 0.9996,
+  "risk_level": "CRITICAL",
+  "decision": "REVIEW",
+  "risk_signals": [
+    "Multiple recent failures",
+    "New device",
+    "Unusual country"
+  ]
+}
+```
+
+### Legitimate transaction
+```json
+{
+  "fraud_probability": 0.0,
+  "risk_level": "LOW",
+  "decision": "ALLOW",
+  "risk_signals": []
+}
+```
+
+## Local setup
 
 ### Prerequisites
-
 - Python 3.11+
 - Node.js 20+
-- Docker Desktop (for full stack)
-- PostgreSQL and Redis (via Docker Compose or local install)
+- Docker Desktop (recommended)
+- PostgreSQL 15 and Redis 7
 
-### 1. Environment configuration
-
+### 1. Configure environment
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and set at minimum:
+Set your secrets in `.env`, including JWT settings and database/Redis values.
 
-- `JWT_SECRET_KEY` — generate with:  
-  `python -c "import secrets; print(secrets.token_urlsafe(64))"`
-- `ADMIN_PASSWORD` — local admin password (hashed on first seed)
-- Database and Redis URLs if not using defaults
-
-Never commit `.env`. It is listed in `.gitignore`.
-
-### 2. Backend setup
-
+### 2. Backend
 ```bash
 cd backend
 python -m venv venv
 # Windows
 .\venv\Scripts\pip install -r requirements.txt
-# macOS/Linux
-# source venv/bin/activate && pip install -r requirements.txt
-
-# Run migrations (PostgreSQL must be running)
 .\venv\Scripts\alembic upgrade head
-
-# Seed default admin user (idempotent — skips if admin exists)
 .\venv\Scripts\python app/db/init_db.py
-
-# Start API
 .\venv\Scripts\uvicorn app.main:app --reload
 ```
 
-API docs: http://localhost:8000/docs
-
-### 3. Frontend setup
-
+### 3. Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Dev server: http://localhost:5173 (proxies `/api` to backend on port 8000)
-
-### 4. Docker setup
-
-From the project root:
-
+### 4. Docker Compose
 ```bash
 docker compose up --build
 ```
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost |
-| Backend API | http://localhost:8000 |
-| PostgreSQL | localhost:5432 |
-| Redis | localhost:6379 |
+## Testing
 
-In Docker, the frontend nginx container proxies `/api/*` to the backend service. The browser uses relative `/api` URLs — no hardcoded backend host in client code.
-
-### 5. ML dependencies (Phase 2 prep)
-
-ML scripts use packages declared in:
-
-- `ml/requirements.txt` — standalone ML environment
-- `backend/requirements.txt` — same deps for backend/Docker parity
-
-Install for standalone ML work:
+Backend tests are present in the repository and include security, auth, transactions, ML, AI, audit, and health checks.
 
 ```bash
-pip install -r ml/requirements.txt
+cd backend
+python -m pytest tests/ -v
 ```
 
-Do not run training until Phase 2 is approved.
+The project states a test suite count of **108 tests** across the backend test modules.
 
-## Test Commands
+## Project structure
 
-```bash
-# Backend (from project root)
-npm run test:backend
-
-# Or directly
-cd backend && python -m pytest tests/ -v
-
-# Frontend build
-cd frontend && npm run build
+```text
+razorguard/
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── core/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   ├── services/
+│   │   └── db/
+│   ├── tests/
+│   ├── requirements.txt
+│   └── alembic/
+├── frontend/
+│   ├── src/
+│   ├── package.json
+│   └── nginx.conf
+├── ml/
+│   ├── artifacts/
+│   ├── features.py
+│   ├── train.py
+│   └── requirements.txt
+├── data/
+├── docs/
+├── docker/
+├── scripts/
+├── docker-compose.yml
+├── .env.example
+├── README.md
+└── package.json
 ```
 
-## Phase 1 API Endpoints
+## Documentation
 
-| Method | Path | Access | Description |
-|--------|------|--------|-------------|
-| POST | `/api/auth/login` | Public | Login, returns JWT |
-| GET | `/api/auth/me` | Authenticated | Current user profile |
-| GET | `/api/system/health` | Public | DB + Redis health |
-| GET | `/api/admin/users` | ADMIN | List users |
-| GET | `/api/admin/stats` | ADMIN | Admin statistics |
-| GET | `/api/analyst/overview` | ADMIN, ANALYST | Analyst workspace stub |
-| GET | `/api/system/info` | All roles | Read-only system info |
-
-### RBAC Roles
-
-| Role | Permissions |
-|------|-------------|
-| **ADMIN** | Full administrative access |
-| **ANALYST** | Analyst-level access (no admin routes) |
-| **VIEWER** | Read-only access |
-
-## Phase 2 Planned Scope
-
-Phase 2 (Data + ML) will add:
-
-- Transaction data ingestion aligned with the ML schema
-- Feature engineering pipeline (`ml/features.py`)
-- Model training and evaluation (`ml/train.py`, `ml/evaluate.py`)
-- Alembic migrations extending the `transactions` table
-- Fraud scoring integration (later phase)
-
-No ML performance claims are made at this stage.
-
-## Project Structure
-
-```
-backend/          FastAPI application, Alembic, tests
-frontend/         React UI
-ml/               ML pipeline scaffolding (Phase 2)
-data/             Demo transaction dataset
-docker/           Dockerfiles
-scripts/          Utility scripts (e.g. demo data generation)
-docker-compose.yml
-.env.example
-```
+- [docs/architecture.md](docs/architecture.md)
+- [docs/ml-pipeline.md](docs/ml-pipeline.md)
+- [docs/model-card.md](docs/model-card.md)
 
 ## License
 
-Private — Razorpay AI Buildathon project.
+Private project for the Razorpay AI Buildathon.

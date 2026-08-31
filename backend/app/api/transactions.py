@@ -21,6 +21,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import and_, case, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -389,6 +390,19 @@ async def score_transaction(
     except HTTPException:
         await db.rollback()
         raise
+    except IntegrityError as exc:
+        # Duplicate transaction_id from a concurrent request that won the race.
+        # The unique constraint on transaction_id is the final source of truth.
+        await db.rollback()
+        logger.warning(
+            "Duplicate transaction_id '%s' caught via IntegrityError: %s",
+            payload.transaction_id,
+            exc,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Transaction '{payload.transaction_id}' has already been scored.",
+        )
     except Exception:
         logger.exception("Database failure while persisting score for %s", payload.transaction_id)
         await db.rollback()

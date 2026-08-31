@@ -5,37 +5,36 @@ interface ConfusionMatrixGridProps {
   fn: number | null;
 }
 
-function Cell({
-  label,
-  sublabel,
-  value,
-  tone,
-}: {
+interface CellProps {
+  abbr: string;
   label: string;
-  sublabel: string;
   value: number | null;
-  tone: string;
-}) {
+  valueClass: string;
+  borderClass: string;
+}
+
+function Cell({ abbr, label, value, valueClass, borderClass }: CellProps) {
   return (
-    <div className={`rounded-lg border p-4 text-center ${tone}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-wider opacity-80">{label}</p>
-      <p className="text-2xl font-bold tabular-nums mt-1">{value ?? '—'}</p>
-      <p className="text-[11px] mt-1 opacity-70">{sublabel}</p>
+    <div className={`flex flex-col items-center justify-center py-4 px-3 border ${borderClass} bg-[#06101F]`}>
+      <span className={`text-xs font-bold uppercase tracking-wide ${valueClass} mb-1`}>{abbr}</span>
+      <span className={`text-2xl font-bold tabular-nums ${valueClass}`}>
+        {value !== null ? value.toLocaleString('en-IN') : '—'}
+      </span>
+      <span className="text-[10px] text-slate-600 mt-1 text-center leading-tight">{label}</span>
     </div>
   );
 }
 
 /**
- * 2x2 confusion matrix from the stored held-out evaluation. Plain HTML/CSS —
- * the API provides only scalar metrics, so nothing is charted/fabricated.
+ * 2×2 confusion matrix. Plain HTML — no chart points fabricated.
  */
 export default function ConfusionMatrixGrid({ tp, tn, fp, fn }: ConfusionMatrixGridProps) {
   return (
-    <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
-      <Cell label="TP" sublabel="Fraud caught" value={tp} tone="border-risk-low/40 bg-risk-low/10 text-risk-low" />
-      <Cell label="FP" sublabel="Legitimate flagged" value={fp} tone="border-risk-high/40 bg-risk-high/10 text-risk-high" />
-      <Cell label="FN" sublabel="Fraud missed" value={fn} tone="border-risk-critical/40 bg-risk-critical/10 text-risk-critical" />
-      <Cell label="TN" sublabel="Legitimate allowed" value={tn} tone="border-primary/40 bg-primary/10 text-primary" />
+    <div className="grid grid-cols-2 gap-px bg-[#142238] border border-[#142238] rounded overflow-hidden max-w-sm mx-auto">
+      <Cell abbr="TP" label="Fraud caught"        value={tp} valueClass="text-risk-low"      borderClass="border-0" />
+      <Cell abbr="FP" label="Legit flagged"        value={fp} valueClass="text-risk-high"     borderClass="border-0" />
+      <Cell abbr="FN" label="Fraud missed"         value={fn} valueClass="text-risk-critical" borderClass="border-0" />
+      <Cell abbr="TN" label="Legit allowed"        value={tn} valueClass="text-primary"       borderClass="border-0" />
     </div>
   );
 }

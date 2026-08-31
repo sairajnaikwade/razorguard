@@ -44,6 +44,14 @@ class Settings(BaseSettings):
     # App
     APP_ENV: str = "development"
 
+    # Login rate limiting (Redis-backed)
+    # Set RATE_LIMIT_ENABLED=false to disable entirely (e.g. in tests/dev).
+    RATE_LIMIT_ENABLED: bool = True
+    # Maximum login attempts per IP within the window before 429 is returned.
+    LOGIN_RATE_LIMIT_MAX: int = 10
+    # Sliding window length in seconds.
+    LOGIN_RATE_LIMIT_WINDOW: int = 60
+
     # Expected-loss estimation (live dashboard) — business cost assumptions.
     # Mirrors ml/threshold.py BusinessCostModel: a flagged (non-ALLOW)
     # transaction carries an analyst review cost when it turns out legitimate;

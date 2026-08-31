@@ -33,11 +33,13 @@ export const useTransactionsStore = create<TransactionsState>((set, get) => ({
       const data = await transactionsApi.list(params);
       set({ data, loading: false });
     } catch {
-      set({
+      // Preserve existing data so the table stays visible on a failed refresh.
+      // Only clear data on the very first load (when data is null).
+      set((prev) => ({
         loading: false,
         error: 'Unable to load transactions. Please try again.',
-        data: null,
-      });
+        data: prev.data ?? null,
+      }));
     }
   },
 

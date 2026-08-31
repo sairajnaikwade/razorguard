@@ -5,15 +5,16 @@ interface TableSkeletonProps {
 
 export default function TableSkeleton({ rows = 8, columns = 5 }: TableSkeletonProps) {
   return (
-    <div className="animate-pulse" role="status" aria-label="Loading table">
-      <div className="h-10 bg-slate-800/70 rounded-t-lg" />
+    <div role="status" aria-label="Loading table">
+      {/* Header placeholder */}
+      <div className="h-9 bg-white/[0.02] border-b border-[#142238]" />
       {Array.from({ length: rows }).map((_, r) => (
-        <div key={r} className="flex gap-4 px-4 py-3 border-b border-slate-800/60">
+        <div key={r} className="flex gap-4 px-5 py-3 border-b border-[#142238]">
           {Array.from({ length: columns }).map((__, c) => (
             <div
               key={c}
-              className="h-4 bg-slate-800 rounded flex-1"
-              style={{ maxWidth: `${20 + ((r + c) % 3) * 15}%` }}
+              className="h-3.5 skeleton rounded flex-1"
+              style={{ maxWidth: `${18 + ((r + c) % 4) * 14}%` }}
             />
           ))}
         </div>

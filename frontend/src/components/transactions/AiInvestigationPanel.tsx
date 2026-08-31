@@ -8,333 +8,260 @@ import {
   CircleDashed,
   RefreshCw,
   ShieldCheck,
+  Sparkles,
   WifiOff,
 } from 'lucide-react';
 
 import { investigateApi, type AIInvestigationReport } from '../../services/api';
-import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Spinner from '../ui/Spinner';
 
-// ---------------------------------------------------------------------------
-// Helper — map recommended_action to colour token
-// ---------------------------------------------------------------------------
-function actionColour(action: string): string {
+// ─── Action config ────────────────────────────────────────────────────────────
+function actionConfig(action: string): {
+  label: string;
+  colour: string;
+  border: string;
+  bg: string;
+} {
   switch (action.toUpperCase()) {
     case 'ALLOW':
-      return 'text-risk-low border-risk-low/40 bg-risk-low/10';
+      return { label: 'ALLOW', colour: 'text-risk-low', border: 'border-risk-low/30', bg: 'bg-risk-low/8' };
     case 'MONITOR':
-      return 'text-risk-medium border-risk-medium/40 bg-risk-medium/10';
+      return { label: 'MONITOR', colour: 'text-risk-medium', border: 'border-risk-medium/30', bg: 'bg-risk-medium/8' };
     case 'REQUEST_VERIFICATION':
-      return 'text-risk-high border-risk-high/40 bg-risk-high/10';
+      return { label: 'REQUEST VERIFICATION', colour: 'text-risk-high', border: 'border-risk-high/30', bg: 'bg-risk-high/8' };
     case 'ESCALATE':
-      return 'text-risk-critical border-risk-critical/40 bg-risk-critical/10';
+      return { label: 'ESCALATE', colour: 'text-risk-critical', border: 'border-risk-critical/40', bg: 'bg-risk-critical/8' };
     default:
-      return 'text-slate-300 border-slate-700 bg-slate-800/50';
+      return { label: action, colour: 'text-slate-300', border: 'border-[#142238]', bg: 'bg-white/3' };
   }
 }
 
-// ---------------------------------------------------------------------------
-// Confidence bar
-// ---------------------------------------------------------------------------
-function ConfidenceBar({ value }: { value: number }) {
-  const pct = Math.round(value * 100);
-  const colour =
-    pct >= 80
-      ? 'bg-risk-low'
-      : pct >= 55
-      ? 'bg-risk-medium'
-      : 'bg-risk-high';
+// ─── Section heading inside report ───────────────────────────────────────────
+function ReportSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${colour}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="text-xs tabular-nums font-semibold text-slate-200 w-9 text-right">
-        {pct}%
-      </span>
+    <div className="py-3 border-b border-[#142238] last:border-b-0">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">{title}</p>
+      {children}
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Evidence list item
-// ---------------------------------------------------------------------------
-function EvidenceItem({ text }: { text: string }) {
+// ─── Confidence bar ───────────────────────────────────────────────────────────
+function ConfidenceBar({ value }: { value: number }) {
+  const pct = Math.round(value * 100);
+  const barClass = pct >= 80 ? 'bg-risk-low' : pct >= 55 ? 'bg-risk-medium' : 'bg-risk-high';
+  const label    = pct >= 80 ? 'High' : pct >= 55 ? 'Moderate' : 'Low';
   return (
-    <li className="flex items-start gap-2 text-sm text-slate-300 leading-relaxed">
-      <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-primary" />
-      <span>{text}</span>
-    </li>
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-1.5 rounded-full bg-[#142238] overflow-hidden">
+          <div className={`h-full rounded-full ${barClass}`} style={{ width: `${pct}%` }} />
+        </div>
+        <span className="text-sm font-bold tabular-nums text-slate-200 w-9 text-right">{pct}%</span>
+      </div>
+      <p className="text-xs text-slate-500">{label} confidence</p>
+    </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
+// ─── Main component ───────────────────────────────────────────────────────────
 interface AiInvestigationPanelProps {
   transactionId: string;
-  /** ANALYST and ADMIN can generate; VIEWER can only read existing reports. */
   canGenerate: boolean;
 }
 
-export default function AiInvestigationPanel({
-  transactionId,
-  canGenerate,
-}: AiInvestigationPanelProps) {
-  const [report, setReport] = useState<AIInvestigationReport | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
-  const [limitationsOpen, setLimitationsOpen] = useState(false);
+export default function AiInvestigationPanel({ transactionId, canGenerate }: AiInvestigationPanelProps) {
+  const [report, setReport]                     = useState<AIInvestigationReport | null>(null);
+  const [loading, setLoading]                   = useState(false);
+  const [generating, setGenerating]             = useState(false);
+  const [error, setError]                       = useState<string | null>(null);
+  const [notFound, setNotFound]                 = useState(false);
+  const [limitationsOpen, setLimitationsOpen]   = useState(false);
 
-  // On mount: try to load an existing cached report (all roles allowed)
   const loadExisting = useCallback(async () => {
     if (!transactionId) return;
-    setLoading(true);
-    setError(null);
-    setNotFound(false);
+    setLoading(true); setError(null); setNotFound(false);
     try {
-      const data = await investigateApi.fetch(transactionId);
-      setReport(data);
+      setReport(await investigateApi.fetch(transactionId));
     } catch (err: unknown) {
       interface ApiErr { response?: { status?: number } }
-      if ((err as ApiErr).response?.status === 404) {
-        setNotFound(true);
-      } else {
-        setError('Failed to load the AI investigation report.');
-      }
-    } finally {
-      setLoading(false);
-    }
+      if ((err as ApiErr).response?.status === 404) setNotFound(true);
+      else setError('Failed to load the AI investigation report.');
+    } finally { setLoading(false); }
   }, [transactionId]);
 
-  useEffect(() => {
-    void loadExisting();
-  }, [loadExisting]);
+  useEffect(() => { void loadExisting(); }, [loadExisting]);
 
-  const handleGenerate = useCallback(
-    async (regenerate = false) => {
-      if (!canGenerate) return;
-      setGenerating(true);
-      setError(null);
-      try {
-        const data = await investigateApi.generate(transactionId, regenerate);
-        setReport(data);
-        setNotFound(false);
-      } catch (err: unknown) {
-        interface ApiErr { response?: { data?: { detail?: string } } }
-        const detail = (err as ApiErr).response?.data?.detail;
-        setError(detail ?? 'Failed to generate AI investigation report.');
-      } finally {
-        setGenerating(false);
-      }
-    },
-    [transactionId, canGenerate],
-  );
+  const handleGenerate = useCallback(async (regenerate = false) => {
+    if (!canGenerate) return;
+    setGenerating(true); setError(null);
+    try {
+      const data = await investigateApi.generate(transactionId, regenerate);
+      setReport(data); setNotFound(false);
+    } catch (err: unknown) {
+      interface ApiErr { response?: { data?: { detail?: string } } }
+      setError((err as ApiErr).response?.data?.detail ?? 'Failed to generate AI investigation report.');
+    } finally { setGenerating(false); }
+  }, [transactionId, canGenerate]);
 
-  // -------------------------------------------------------------------
-  // Render states
-  // -------------------------------------------------------------------
+  const cfg = report ? actionConfig(report.recommended_action) : null;
+
   return (
-    <Card className="p-5">
+    <div className="bg-[#0B1728] border border-[#142238] rounded overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Bot size={16} className="text-primary" />
-          AI Investigation Report
-        </h2>
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-[#142238]">
+        <div className="flex items-center gap-2">
+          <Bot size={14} className="text-primary shrink-0" />
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">AI Investigation Report</h2>
+        </div>
         {report && canGenerate && (
-          <Button
-            id="ai-regenerate-btn"
-            variant="ghost"
-            size="sm"
-            disabled={generating}
-            onClick={() => void handleGenerate(true)}
-            title="Force regeneration from Gemini"
+          <Button id="ai-regenerate-btn" variant="ghost" size="sm" disabled={generating}
+            onClick={() => void handleGenerate(true)} title="Force regeneration from Gemini"
           >
-            <RefreshCw size={13} className={generating ? 'animate-spin' : ''} />
+            <RefreshCw size={11} className={generating ? 'animate-spin' : ''} />
             Regenerate
           </Button>
         )}
       </div>
 
-      {/* Loading skeleton */}
-      {loading && (
-        <div className="flex items-center justify-center py-8">
-          <Spinner size={24} />
-        </div>
-      )}
+      <div className="px-4 py-3">
 
-      {/* No report yet */}
-      {!loading && notFound && (
-        <div className="text-center py-6 space-y-3">
-          <CircleDashed size={32} className="mx-auto text-slate-600" />
-          <p className="text-slate-400 text-sm">No AI investigation report yet.</p>
-          {canGenerate ? (
-            <Button
-              id="ai-generate-btn"
-              variant="primary"
-              size="sm"
-              disabled={generating}
-              onClick={() => void handleGenerate(false)}
-            >
-              {generating ? (
-                <>
-                  <Spinner size={14} /> Generating…
-                </>
-              ) : (
-                <>
-                  <Bot size={14} /> Run AI Investigation
-                </>
-              )}
-            </Button>
-          ) : (
-            <p className="text-slate-500 text-xs">
-              Contact an analyst to generate the investigation report.
-            </p>
-          )}
-        </div>
-      )}
+        {/* Loading */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-10 gap-3">
+            <Spinner size={24} />
+            <p className="text-slate-500 text-sm">Loading report…</p>
+          </div>
+        )}
 
-      {/* Error state */}
-      {!loading && error && (
-        <div className="flex items-start gap-2 rounded-lg bg-risk-critical/10 border border-risk-critical/30 px-4 py-3">
-          <AlertTriangle size={15} className="shrink-0 mt-0.5 text-risk-critical" />
-          <div className="space-y-2">
-            <p className="text-risk-critical text-sm">{error}</p>
+        {/* No report */}
+        {!loading && notFound && (
+          <div className="py-4 text-center space-y-3">
+            <CircleDashed size={20} className="mx-auto text-slate-600" />
+            <div>
+              <p className="text-slate-300 text-sm font-medium">No AI investigation yet</p>
+              <p className="text-slate-500 text-xs mt-1 leading-relaxed">
+                {canGenerate ? 'Run a Gemini-powered analysis on this transaction.' : 'Contact an analyst to generate the investigation report.'}
+              </p>
+            </div>
             {canGenerate && (
-              <Button
-                id="ai-retry-btn"
-                variant="ghost"
-                size="sm"
+              <Button id="ai-generate-btn" variant="primary" size="sm" disabled={generating}
                 onClick={() => void handleGenerate(false)}
-                disabled={generating}
               >
-                Retry
+                {generating ? <><Spinner size={12} /> Generating…</> : <><Sparkles size={12} /> Run AI Investigation</>}
               </Button>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Report */}
-      {!loading && report && (
-        <div className="space-y-5">
-          {/* Mock/offline banner */}
-          {report.is_mock && (
-            <div className="flex items-center gap-2 rounded-lg bg-slate-800/80 border border-slate-700 px-3 py-2">
-              <WifiOff size={13} className="shrink-0 text-slate-400" />
-              <p className="text-xs text-slate-400">
-                <span className="font-semibold text-slate-300">Offline mock mode</span> — no
-                Gemini API key configured. Report generated deterministically from model
-                outputs; not a live AI response.
-              </p>
+        {/* Error */}
+        {!loading && error && (
+          <div className="border border-risk-critical/30 bg-risk-critical/5 rounded px-3 py-3 space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={13} className="shrink-0 mt-0.5 text-risk-critical" />
+              <p className="text-risk-critical text-sm leading-relaxed">{error}</p>
             </div>
-          )}
-          {!report.is_mock && (
-            <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/25 px-3 py-2">
-              <ShieldCheck size={13} className="shrink-0 text-primary" />
-              <p className="text-xs text-primary/80">
-                Powered by Gemini — grounded on transaction, history and audit data only.
-              </p>
+            {canGenerate && (
+              <Button id="ai-retry-btn" variant="ghost" size="sm" onClick={() => void handleGenerate(false)} disabled={generating}>
+                <RefreshCw size={11} /> Retry
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Report */}
+        {!loading && report && (
+          <div className="animate-fade-in">
+
+            {/* Source indicator */}
+            <div className={`flex items-center gap-2 rounded px-3 py-2 mb-3 border text-xs ${
+              report.is_mock
+                ? 'bg-white/[0.02] border-[#142238] text-slate-400'
+                : 'bg-primary/5 border-primary/20 text-primary/80'
+            }`}>
+              {report.is_mock
+                ? <><WifiOff size={11} className="shrink-0" /><span><span className="font-semibold text-slate-300">Mock mode</span> — no Gemini API key. Deterministic response.</span></>
+                : <><ShieldCheck size={11} className="shrink-0" /><span>Powered by Gemini · grounded on transaction, history and audit data only.</span></>
+              }
             </div>
-          )}
 
-          {/* Summary */}
-          <section>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
-              Summary
-            </p>
-            <p className="text-sm text-slate-200 leading-relaxed">{report.summary}</p>
-          </section>
-
-          {/* Recommended Action */}
-          <section>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
-              Recommended Action
-            </p>
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-lg border text-sm font-bold tracking-wide ${actionColour(
-                report.recommended_action,
-              )}`}
-            >
-              {report.recommended_action}
-            </span>
-          </section>
-
-          {/* Confidence */}
-          <section>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
-              AI Confidence
-            </p>
-            <ConfidenceBar value={report.confidence} />
-          </section>
-
-          {/* Key Evidence */}
-          <section>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
-              Key Evidence
-            </p>
-            <ul className="space-y-1.5">
-              {report.key_evidence.map((e, i) => (
-                <EvidenceItem key={i} text={e} />
-              ))}
-            </ul>
-          </section>
-
-          {/* Risk Reasoning */}
-          <section>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
-              Risk Reasoning
-            </p>
-            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
-              {report.risk_reasoning}
-            </p>
-          </section>
-
-          {/* Limitations (collapsible) */}
-          {report.limitations.length > 0 && (
-            <section>
-              <button
-                id="ai-limitations-toggle"
-                className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition-colors"
-                onClick={() => setLimitationsOpen((o) => !o)}
-                aria-expanded={limitationsOpen}
-              >
-                {limitationsOpen ? (
-                  <ChevronUp size={12} />
-                ) : (
-                  <ChevronDown size={12} />
+            {/* Recommended Action */}
+            {cfg && (
+              <div className={`rounded px-3 py-2.5 mb-3 border ${cfg.bg} ${cfg.border}`}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Recommended Action</p>
+                <p className={`text-base font-bold tracking-wide ${cfg.colour}`}>
+                  {cfg.label}
+                </p>
+                {report.recommended_action.toUpperCase() === 'ESCALATE' && (
+                  <p className="text-xs text-risk-critical/80 mt-1 leading-relaxed">
+                    Requires immediate escalation to the fraud operations team.
+                  </p>
                 )}
-                Limitations &amp; Caveats ({report.limitations.length})
-              </button>
-              {limitationsOpen && (
-                <ul className="mt-2 space-y-1.5">
-                  {report.limitations.map((l, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-slate-500 leading-relaxed">
-                      <AlertTriangle size={11} className="shrink-0 mt-0.5 text-slate-600" />
-                      <span>{l}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          )}
+              </div>
+            )}
 
-          {/* Generating overlay */}
-          {generating && (
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <Spinner size={12} />
-              Requesting AI analysis…
-            </div>
-          )}
-        </div>
-      )}
-    </Card>
+            {/* Summary */}
+            <ReportSection title="Summary">
+              <p className="text-sm text-slate-200 leading-relaxed">{report.summary}</p>
+            </ReportSection>
+
+            {/* Key Evidence */}
+            <ReportSection title="Key Evidence">
+              <ul className="space-y-1.5">
+                {report.key_evidence.map((e, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-primary/70" />
+                    <span className="text-sm text-slate-300 leading-relaxed">{e}</span>
+                  </li>
+                ))}
+              </ul>
+            </ReportSection>
+
+            {/* Risk Reasoning */}
+            <ReportSection title="Risk Reasoning">
+              <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{report.risk_reasoning}</p>
+            </ReportSection>
+
+            {/* AI Confidence */}
+            <ReportSection title="AI Confidence">
+              <ConfidenceBar value={report.confidence} />
+            </ReportSection>
+
+            {/* Limitations — collapsible */}
+            {report.limitations.length > 0 && (
+              <div className="pt-3">
+                <button
+                  id="ai-limitations-toggle"
+                  className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-400 transition-colors w-full text-left"
+                  onClick={() => setLimitationsOpen((o) => !o)}
+                  aria-expanded={limitationsOpen}
+                >
+                  {limitationsOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                  Limitations &amp; Caveats ({report.limitations.length})
+                </button>
+                {limitationsOpen && (
+                  <ul className="mt-2 space-y-1.5 animate-fade-in">
+                    {report.limitations.map((l, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs text-slate-500 leading-relaxed">
+                        <AlertTriangle size={10} className="shrink-0 mt-0.5 text-slate-600" />
+                        <span>{l}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {/* Generating indicator */}
+            {generating && (
+              <div className="flex items-center gap-2 pt-3 text-xs text-slate-500 border-t border-[#142238] mt-3">
+                <Spinner size={11} /> Requesting AI analysis from Gemini…
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

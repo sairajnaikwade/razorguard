@@ -1,7 +1,7 @@
-# Python
+﻿# Python
 __pycache__/
 *.py[cod]
-*$py.class
+*.class
 *.so
 .Python
 env/
@@ -12,7 +12,7 @@ dist/
 build/
 .eggs/
 
-# Environment
+# Environment / secrets
 .env
 .env.local
 .env.*.local
@@ -35,17 +35,13 @@ frontend/dist/
 
 # ML artifacts
 ml/artifacts/
-ml/artifacts/*.joblib
-ml/artifacts/*.pkl
-ml/artifacts/*.json
-ml/artifacts/*.csv
+
+# Generated datasets
+data/*.csv
+data/*.parquet
 
 # Docker
 *.log
-
-# OS
-.DS_Store
-Thumbs.db
 
 # Test
 .pytest_cache/
@@ -54,6 +50,14 @@ htmlcov/
 *.db
 test.db
 
-# Data
-data/*.csv
-data/*.parquet
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude local configuration
+.claude/
+frontend/.claude/
+
+# Claude local configuration
+.claude/
+frontend/.claude/

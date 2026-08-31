@@ -10,14 +10,38 @@ from app.services.ml_service import get_default_service
 
 logger = logging.getLogger(__name__)
 
+# Known insecure default — must never reach a production deployment unchanged.
+_INSECURE_JWT_DEFAULT = "change-this-to-a-strong-random-secret-in-production"
+
+
+def _assert_production_secrets() -> None:
+    """
+    Refuse to start in production with the known default JWT secret.
+    Raises RuntimeError so the process exits with a non-zero code and
+    leaves a clear message in the logs/container output.
+
+    Only enforced when APP_ENV == "production".  Development and test
+    environments are intentionally excluded so local setup stays frictionless.
+    """
+    if settings.APP_ENV.lower() == "production":
+        if settings.JWT_SECRET_KEY == _INSECURE_JWT_DEFAULT:
+            raise RuntimeError(
+                "FATAL: JWT_SECRET_KEY is set to the known insecure default value. "
+                "Set a strong random secret via the JWT_SECRET_KEY environment "
+                "variable before running in production. "
+                "Generate one with:  python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load ML artifacts once at startup; never retrain, never crash the app.
-
-    If artifacts are missing/corrupted the app still boots so /api/system/health
-    can report ml_model="unavailable" instead of silently pretending all is well.
     """
+    Startup sequence:
+      1. Enforce production-safety checks (fail fast on misconfiguration).
+      2. Load ML artifacts (failure is non-fatal; health endpoint reports it).
+    """
+    _assert_production_secrets()
+
     service = get_default_service()
     try:
         service.load_artifacts()
