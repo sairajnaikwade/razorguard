@@ -176,13 +176,14 @@ def run_ai_investigation(
 ) -> AIInvestigationResponse:
     """
     Generate an AI-driven fraud investigation report.
-    If GEMINI_API_KEY is not configured in settings, falls back to mock/offline generation.
+    If GEMINI_API_KEY is not configured or if API fails (e.g. 503 Overloaded/Demand Spikes),
+    falls back gracefully to offline mock generation.
     """
     api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
     if not api_key:
         return generate_mock_investigation(transaction, history, audit_logs)
 
-    model = settings.GEMINI_MODEL or os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    model = settings.GEMINI_MODEL or os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
     logger.info("Calling Gemini API using model: %s", model)
 
     try:
@@ -201,20 +202,18 @@ def run_ai_investigation(
         )
 
         if not response.text:
-            raise AIServiceError("Empty response returned from Gemini API")
+            logger.warning("Empty response returned from Gemini API. Falling back to mock investigation.")
+            mock_report = generate_mock_investigation(transaction, history, audit_logs)
+            mock_report.limitations.append("Fallback: Gemini API returned empty response.")
+            return mock_report
 
         # Parse and validate the response against the schema
         data = json.loads(response.text)
-        # Ensure is_mock is set to False since this is from the live API
         data["is_mock"] = False
         return AIInvestigationResponse.model_validate(data)
 
-    except ValidationError as e:
-        logger.error("Gemini API output failed schema validation: %s", e)
-        raise AIServiceError(f"AI response failed schema validation: {e}") from e
-    except json.JSONDecodeError as e:
-        logger.error("Gemini API returned invalid JSON: %s", e)
-        raise AIServiceError(f"AI response was not valid JSON: {e}") from e
     except Exception as e:
-        logger.exception("Unexpected error during Gemini investigation generation")
-        raise AIServiceError(f"Gemini API invocation failed: {e}") from e
+        logger.warning("Gemini API call failed (%s). Falling back to mock investigation report for UI resiliency.", e)
+        mock_report = generate_mock_investigation(transaction, history, audit_logs)
+        mock_report.limitations.append(f"Fallback mode active: Gemini API temporarily unavailable (503/Overloaded).")
+        return mock_report
