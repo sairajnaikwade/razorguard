@@ -290,6 +290,20 @@ python scripts/seed_demo_transactions.py
 
 ---
 
+## Demo Credentials
+
+Three users are auto-created by `init_db.py` covering all RBAC roles:
+
+| Role | Username | Password | Permissions |
+|---|---|---|---|
+| **ADMIN** | `admin` | `RazorGuard-Dev-Admin-2026!` | Full access — score, investigate, manage users, view stats |
+| **ANALYST** | `analyst` | `RazorGuard-Analyst-2026!` | Score transactions, trigger AI investigations, view audit |
+| **VIEWER** | `viewer` | `RazorGuard-Viewer-2026!` | Read-only — view transactions, ML status, system health |
+
+> These are local dev credentials only. Override via environment variables in production.
+
+
+
 ## Testing
 
 **139 tests** across security, auth, transactions, ML pipeline, AI agent, audit, and health.
