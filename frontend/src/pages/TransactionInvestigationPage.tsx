@@ -168,52 +168,52 @@ export default function TransactionInvestigationPage() {
       <BackLink />
 
       {/* ── Transaction header ─────────────────────────────────────────── */}
-      <div className={`bg-[#0B1728] border rounded ${
-        isCritical ? 'border-l-2 border-risk-critical' :
-        isHigh     ? 'border-l-2 border-risk-high'     :
-                     'border-[#142238]'
+      <div className={`bg-[#0A1628]/90 border rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-sm ${
+        isCritical ? 'border-red-500/50 bg-gradient-to-r from-red-500/10 via-[#0A1628] to-[#0A1628]' :
+        isHigh     ? 'border-orange-500/40 bg-gradient-to-r from-orange-500/10 via-[#0A1628] to-[#0A1628]' :
+                     'border-[#162A45]'
       }`}>
-        <div className="px-4 py-3 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           {/* Left: ID + meta */}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="mono-id text-white text-sm break-all">{txn.transaction_id}</span>
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="mono-id text-white text-base sm:text-lg font-bold break-all">{txn.transaction_id}</span>
               {(isCritical || isHigh) && (
-                <span className={`inline-flex items-center gap-1 text-xs font-semibold ${
-                  isCritical ? 'text-risk-critical' : 'text-risk-high'
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider ${
+                  isCritical ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
                 }`}>
-                  <ShieldAlert size={12} />
-                  {isCritical ? 'Immediate review required' : 'Review recommended'}
+                  <ShieldAlert size={13} className="animate-pulse" />
+                  {isCritical ? 'Immediate Action Required' : 'Review Recommended'}
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Customer: <span className="mono-id">{txn.customer_id}</span>
-              {' · '}Scored by RazorGuard ML
+            <p className="text-xs text-slate-400 font-medium">
+              Customer ID: <span className="mono-id text-blue-300 font-semibold">{txn.customer_id}</span>
+              {' · '}Scored by ML Engine
               {txn.model_version && (
-                <>{' · '}<span className="mono-id">{txn.model_version}</span></>
+                <>{' · '}<span className="mono-id text-slate-300">{txn.model_version}</span></>
               )}
             </p>
           </div>
           {/* Right: amount + probability + badges */}
-          <div className="flex items-center gap-4 shrink-0 flex-wrap">
+          <div className="flex items-center gap-5 shrink-0 flex-wrap">
             <div className="text-right">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wide">Amount</p>
-              <p className="text-lg font-bold tabular-nums text-white leading-tight">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Amount</p>
+              <p className="text-xl sm:text-2xl font-black tabular-nums text-white leading-tight">
                 {fmtMoney(txn.amount, txn.currency)}
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wide">Fraud Prob.</p>
-              <p className={`text-xl font-bold tabular-nums leading-tight ${probColour(prob)}`}>
+            <div className="text-right pl-3 border-l border-[#162A45]">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Fraud Score</p>
+              <p className={`text-2xl font-black tabular-nums leading-tight ${probColour(prob)}`}>
                 {prob !== null && prob !== undefined ? `${(prob * 100).toFixed(1)}%` : '—'}
               </p>
             </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Badge variant={riskLevelVariant(txn.risk_level)} className="text-xs">
+            <div className="flex items-center gap-2 flex-wrap pl-2">
+              <Badge variant={riskLevelVariant(txn.risk_level)} className="text-xs px-2.5 py-1 font-bold shadow-md">
                 {txn.risk_level ?? 'UNSCORED'}
               </Badge>
-              <Badge variant={decisionVariant(txn.decision)} className="text-xs">
+              <Badge variant={decisionVariant(txn.decision)} className="text-xs px-2.5 py-1 font-bold shadow-md">
                 {txn.decision ?? '—'}
               </Badge>
             </div>
@@ -222,22 +222,22 @@ export default function TransactionInvestigationPage() {
       </div>
 
       {/* ── Main grid: left + right sidebar ───────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_320px] gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_320px] gap-5 items-start">
 
         {/* ════ LEFT COLUMN ════ */}
-        <div className="space-y-4 min-w-0 order-2 lg:order-1">
+        <div className="space-y-5 min-w-0 order-2 lg:order-1">
 
           {/* Transaction Facts */}
-          <div className="bg-[#0B1728] border border-[#142238] rounded">
-            <SectionHeader title="Transaction Details" />
-            <div className="px-4 pt-1 pb-2">
+          <div className="bg-[#0A1628]/90 border border-[#162A45] rounded-2xl overflow-hidden shadow-lg">
+            <SectionHeader title="Transaction Parameters" />
+            <div className="px-5 pt-1 pb-3">
               <dl>
-                <FactRow label="Merchant"        value={txn.merchant_id}                mono />
+                <FactRow label="Merchant ID"     value={txn.merchant_id}                mono />
                 <FactRow label="Payment Method"  value={capitalize(txn.payment_method)} />
                 <FactRow label="Country"         value={txn.country ?? '—'} />
                 <FactRow label="Device ID"       value={txn.device_id ?? '—'}           mono />
                 <FactRow label="Model Version"   value={txn.model_version ?? '—'}       mono />
-                <FactRow label="Scored At"       value={fmtTimestamp(txn.scored_at ?? txn.created_at)} />
+                <FactRow label="Scored Timestamp" value={fmtTimestamp(txn.scored_at ?? txn.created_at)} />
               </dl>
             </div>
           </div>

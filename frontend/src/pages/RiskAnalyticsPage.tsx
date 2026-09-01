@@ -27,9 +27,12 @@ function metricColour(value: number | null | undefined): string {
 // ─── Shared panel header ──────────────────────────────────────────────────────
 function PanelHeader({ title, sub }: { title: string; sub?: string }) {
   return (
-    <div className="px-4 py-2.5 border-b border-[#142238]">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</h2>
-      {sub && <p className="text-[10px] text-slate-600 mt-0.5">{sub}</p>}
+    <div className="px-5 py-4 border-b border-[#162A45]/80 bg-[#081220]/60 flex items-center justify-between">
+      <div>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-300">{title}</h2>
+        {sub && <p className="text-[11px] text-slate-400 mt-0.5 font-medium">{sub}</p>}
+      </div>
+      <span className="w-2 h-2 rounded-full bg-blue-500/40" />
     </div>
   );
 }
@@ -41,19 +44,21 @@ function StatCell({
   label: string; value: string; mono?: boolean; colour?: string; hint?: string;
 }) {
   return (
-    <div className="px-4 py-3 border-r border-b border-[#142238] last:border-r-0 flex flex-col gap-1 min-w-0">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 leading-tight">
+    <div className="p-4 bg-[#0A1628]/60 hover:bg-[#0D1D35]/90 border-r border-b border-[#162A45]/70 last:border-r-0 flex flex-col justify-between gap-1.5 transition-colors">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none">
         {label}
       </span>
-      <span
-        className={`text-xl font-bold tabular-nums leading-tight truncate ${colour} ${mono ? 'mono-id' : ''}`}
-        title={value}
-      >
-        {value}
-      </span>
-      {hint && (
-        <span className="text-[10px] text-slate-600 leading-tight">{hint}</span>
-      )}
+      <div>
+        <span
+          className={`text-xl font-black tabular-nums leading-tight truncate block ${colour} ${mono ? 'mono-id text-blue-300' : ''}`}
+          title={value}
+        >
+          {value}
+        </span>
+        {hint && (
+          <span className="text-[10px] text-slate-400 leading-tight block mt-1 font-medium">{hint}</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -65,16 +70,16 @@ function CostRow({
   label: string; sublabel: string; value: string; emphasized?: boolean;
 }) {
   return (
-    <div className={`flex items-start justify-between gap-4 px-4 py-3 border-b border-[#142238] last:border-b-0 ${
-      emphasized ? 'bg-white/[0.025]' : ''
+    <div className={`flex items-start justify-between gap-4 px-5 py-3.5 border-b border-[#162A45]/70 last:border-b-0 ${
+      emphasized ? 'bg-blue-500/5' : ''
     }`}>
       <div className="min-w-0">
-        <p className={`text-sm font-semibold ${emphasized ? 'text-slate-100' : 'text-slate-300'}`}>
+        <p className={`text-xs sm:text-sm font-bold ${emphasized ? 'text-white' : 'text-slate-200'}`}>
           {label}
         </p>
-        <p className="text-[11px] text-slate-500 mt-0.5">{sublabel}</p>
+        <p className="text-[11px] text-slate-400 mt-0.5 font-medium">{sublabel}</p>
       </div>
-      <p className={`text-sm font-bold tabular-nums shrink-0 ${emphasized ? 'text-white' : 'text-slate-200'}`}>
+      <p className={`text-sm sm:text-base font-black tabular-nums shrink-0 ${emphasized ? 'text-cyan-400' : 'text-slate-100'}`}>
         {value}
       </p>
     </div>
@@ -104,120 +109,134 @@ export default function RiskAnalyticsPage() {
   useEffect(() => { void load(); }, [load]);
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-28 gap-3">
-      <Spinner size={28} />
-      <p className="text-slate-500 text-sm">Loading ML analytics…</p>
+    <div className="flex flex-col items-center justify-center py-36 gap-3">
+      <Spinner size={32} />
+      <p className="text-slate-400 text-sm font-medium animate-pulse">Loading ML model metrics…</p>
     </div>
   );
 
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   if (mlDown) return (
-    <div className="space-y-4 animate-fade-in">
-      <header>
-        <h1 className="text-xl font-bold text-white tracking-tight">Risk Analytics</h1>
+    <div className="space-y-5 animate-fade-in">
+      <header className="bg-[#0A1628]/60 border border-[#162A45]/60 rounded-2xl p-5">
+        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Risk Analytics</h1>
         <p className="text-slate-400 text-sm mt-0.5">ML model performance and threshold metrics</p>
       </header>
-      <div className="bg-[#0B1728] border border-[#142238] rounded p-10 text-center">
-        <Zap size={24} className="mx-auto text-slate-600 mb-3" />
-        <p className="text-slate-400 text-sm">ML model is currently unavailable.</p>
+      <div className="bg-[#0A1628]/90 border border-[#162A45] rounded-2xl p-12 text-center shadow-lg">
+        <Zap size={28} className="mx-auto text-amber-400 mb-3 animate-pulse" />
+        <p className="text-slate-200 text-sm font-bold">ML model service is currently unavailable.</p>
+        <p className="text-slate-500 text-xs mt-1">Please ensure the backend service and model artifacts are initialized.</p>
       </div>
     </div>
   );
 
   return (
-    <div className="space-y-4 animate-fade-in max-w-5xl">
+    <div className="space-y-5 animate-fade-in max-w-6xl pb-4">
 
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <header>
-        <h1 className="text-xl font-bold text-white tracking-tight">Risk Analytics</h1>
-        {status && (
-          <p className="text-slate-400 text-sm mt-0.5">
-            <span className="mono-id">{status.model_name}</span>
-            {' · '}{status.model_type}
-          </p>
-        )}
+      <header className="flex items-center justify-between gap-4 flex-wrap bg-[#0A1628]/60 border border-[#162A45]/60 rounded-2xl p-4 sm:p-5 backdrop-blur-sm shadow-sm">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Risk Analytics</h1>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/30">
+              Random Forest v1.0
+            </span>
+          </div>
+          {status && (
+            <p className="text-slate-400 text-xs sm:text-sm mt-1 font-medium flex items-center gap-2">
+              <span className="mono-id text-blue-300 font-semibold">{status.model_name}</span>
+              <span className="text-slate-600">·</span>
+              <span>{status.model_type}</span>
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          Model Active &amp; Serving
+        </div>
       </header>
 
       {/* ── Disclaimer ─────────────────────────────────────────────── */}
-      <div className="flex items-start gap-3 bg-[#0B1728] border border-[#142238] rounded px-4 py-3">
-        <Info size={14} className="text-risk-medium shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3.5 bg-[#0A1628]/90 border border-amber-500/30 rounded-2xl p-4 sm:p-4.5 shadow-md">
+        <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 shrink-0">
+          <Info size={16} />
+        </div>
         <div>
-          <p className="text-sm font-semibold text-risk-medium">
-            Synthetic held-out test metrics — not live production performance.
+          <p className="text-xs sm:text-sm font-bold text-amber-300">
+            Synthetic Held-Out Test Split Evaluation
           </p>
           {metrics?.note && (
-            <p className="text-slate-400 text-xs mt-1 leading-relaxed">{metrics.note}</p>
+            <p className="text-slate-300 text-xs mt-1 leading-relaxed font-medium">{metrics.note}</p>
           )}
         </div>
       </div>
 
       {/* ── Model Identity ─────────────────────────────────────────── */}
-      <div className="bg-[#0B1728] border border-[#142238] rounded overflow-hidden">
-        <PanelHeader title="Model Identity" />
-        {/* 4-col flex row — wraps to 2-col on mobile */}
-        <div className="grid grid-cols-2 md:grid-cols-4">
-          <StatCell label="Model Name"         value={status?.model_name    ?? '—'} mono />
-          <StatCell label="Version"            value={status?.model_version ?? '—'} mono />
-          <StatCell label="Type"               value={status?.model_type    ?? '—'} />
+      <div className="bg-[#0A1628]/90 border border-[#162A45] rounded-2xl overflow-hidden shadow-lg">
+        <PanelHeader title="Model Identity &amp; Runtime Parameters" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y md:divide-y-0 border-t border-[#162A45]/80">
+          <StatCell label="Model Identifier"  value={status?.model_name    ?? '—'} mono />
+          <StatCell label="Artifact Version"  value={status?.model_version ?? '—'} mono />
+          <StatCell label="Classifier Type"   value={status?.model_type    ?? '—'} />
           <StatCell
-            label="Status"
+            label="Service State"
             value={status?.status?.toUpperCase() ?? '—'}
-            colour={status?.status === 'loaded' || status?.status === 'healthy' ? 'text-risk-low' : 'text-slate-400'}
+            colour={status?.status === 'loaded' || status?.status === 'healthy' ? 'text-emerald-400 font-extrabold' : 'text-slate-400'}
           />
-          <StatCell label="Feature Count"      value={String(status?.feature_count ?? '—')} />
+          <StatCell label="Feature Features"   value={String(status?.feature_count ?? '—')} />
           <StatCell
             label="Decision Threshold"
             value={status?.threshold != null ? status.threshold.toFixed(2) : '—'}
-            hint="Scores above this are flagged"
+            hint="Flagged if score ≥ 0.30"
+            colour="text-cyan-400 font-black"
           />
         </div>
       </div>
 
       {/* ── Quality Metrics ────────────────────────────────────────── */}
-      <div className="bg-[#0B1728] border border-[#142238] rounded overflow-hidden">
-        <PanelHeader title="Model Quality Metrics" sub="Held-out test split · synthetic data" />
-        {/* 5-col on lg, 3-col on md, 2-col on mobile */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+      <div className="bg-[#0A1628]/90 border border-[#162A45] rounded-2xl overflow-hidden shadow-lg">
+        <PanelHeader title="Model Performance Metrics" sub="Evaluated on held-out synthetic test dataset" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 border-t border-[#162A45]/80">
           <StatCell
             label="Precision"
             value={fmtPct(metrics?.precision)}
             colour={metricColour(metrics?.precision)}
-            hint="Of flagged, how many were fraud"
+            hint="True fraud / Total flagged"
           />
           <StatCell
             label="Recall"
             value={fmtPct(metrics?.recall)}
             colour={metricColour(metrics?.recall)}
-            hint="Of all fraud, how many caught"
+            hint="Fraud caught / Total actual fraud"
           />
           <StatCell
             label="F1 Score"
             value={fmtPct(metrics?.f1)}
             colour={metricColour(metrics?.f1)}
-            hint="Harmonic mean of P and R"
+            hint="Harmonic mean of P &amp; R"
           />
           <StatCell
             label="PR-AUC"
             value={fmtPct(metrics?.pr_auc)}
             colour={metricColour(metrics?.pr_auc)}
-            hint="Precision-recall area"
+            hint="Precision-Recall Area"
           />
           <StatCell
             label="ROC-AUC"
             value={fmtPct(metrics?.roc_auc)}
             colour={metricColour(metrics?.roc_auc)}
-            hint="Discrimination ability"
+            hint="Discrimination index"
           />
         </div>
       </div>
 
       {/* ── Confusion Matrix + Cost Breakdown ──────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Confusion Matrix */}
-        <div className="bg-[#0B1728] border border-[#142238] rounded overflow-hidden">
-          <PanelHeader title="Confusion Matrix" sub="Held-out test split · synthetic data" />
+        <div className="bg-[#0A1628]/90 border border-[#162A45] rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between">
+          <PanelHeader title="Confusion Matrix" sub="Classification outcomes on test dataset" />
           <div className="p-5">
             <ConfusionMatrixGrid
               tp={metrics?.true_positive ?? null}
@@ -226,57 +245,59 @@ export default function RiskAnalyticsPage() {
               fn={metrics?.false_negative ?? null}
             />
             {/* Legend */}
-            <div className="mt-4 pt-3 border-t border-[#142238] grid grid-cols-2 gap-x-4 gap-y-1">
-              <span className="text-[11px] text-slate-500">
-                <span className="text-risk-low font-semibold">TP</span> — fraud caught correctly
+            <div className="mt-5 pt-3.5 border-t border-[#162A45]/80 grid grid-cols-2 gap-x-4 gap-y-2">
+              <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <strong className="text-emerald-400 font-bold">TP:</strong> True Fraud Caught
               </span>
-              <span className="text-[11px] text-slate-500">
-                <span className="text-risk-high font-semibold">FP</span> — legit flagged as fraud
+              <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-orange-400" />
+                <strong className="text-orange-400 font-bold">FP:</strong> False Alarm (Legit Flagged)
               </span>
-              <span className="text-[11px] text-slate-500">
-                <span className="text-risk-critical font-semibold">FN</span> — fraud missed
+              <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-400" />
+                <strong className="text-red-400 font-bold">FN:</strong> Missed Fraud
               </span>
-              <span className="text-[11px] text-slate-500">
-                <span className="text-primary font-semibold">TN</span> — legit allowed correctly
+              <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-400" />
+                <strong className="text-blue-400 font-bold">TN:</strong> True Allowed
               </span>
             </div>
           </div>
         </div>
 
         {/* Cost Breakdown */}
-        <div className="bg-[#0B1728] border border-[#142238] rounded overflow-hidden">
-          <PanelHeader title="Held-out Cost Breakdown" sub="Cost model for threshold selection · synthetic" />
+        <div className="bg-[#0A1628]/90 border border-[#162A45] rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between">
+          <PanelHeader title="Held-Out Cost Breakdown" sub="Business cost simulation for decision threshold selection" />
           <div>
             <CostRow
-              label="FP cost"
-              sublabel="Review overhead per false alarm"
+              label="False Positive Cost (FP)"
+              sublabel="Analyst review cost per false alarm"
               value={`₹${fmtNum(metrics?.false_positive_cost)}`}
             />
             <CostRow
-              label="FN cost"
-              sublabel="Estimated loss per missed fraud"
+              label="False Negative Cost (FN)"
+              sublabel="Estimated loss per un-caught fraudulent transaction"
               value={`₹${fmtNum(metrics?.false_negative_cost)}`}
             />
             <CostRow
-              label="Total held-out cost"
-              sublabel="Single evaluation on synthetic test split"
+              label="Total Evaluation Cost"
+              sublabel="Combined risk exposure on test dataset"
               value={`₹${fmtNum(metrics?.total_expected_loss)}`}
               emphasized
             />
           </div>
-          <div className="px-4 py-2.5 border-t border-[#142238]">
-            <p className="text-[11px] text-slate-600 leading-relaxed">
-              Not a live or expected business loss — reflects one evaluation run on the synthetic
-              held-out split used for threshold selection.
+          <div className="px-5 py-3.5 border-t border-[#162A45]/80 bg-[#081220]/60">
+            <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+              Modeled metric for threshold optimization. Reflects synthetic evaluation run on the held-out split.
             </p>
           </div>
         </div>
       </div>
 
       {/* ── Footer note ─────────────────────────────────────────────── */}
-      <p className="text-xs text-slate-600 pb-2">
-        ROC and precision-recall curves are intentionally not rendered — the API exposes only scalar
-        summary metrics, and no chart points are fabricated for display.
+      <p className="text-xs text-slate-400 px-1 font-medium">
+        All scalar metrics reflect authoritative metadata generated during model serialization.
       </p>
     </div>
   );

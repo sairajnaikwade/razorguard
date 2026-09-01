@@ -13,6 +13,7 @@ import {
   Percent,
   Server,
   ShieldAlert,
+  ShieldCheck,
   TrendingUp,
 } from 'lucide-react';
 
@@ -69,7 +70,7 @@ function LiveDateTime() {
   );
 }
 
-// ─── KPI strip item ───────────────────────────────────────────────────────────
+// ─── KPI Card item ───────────────────────────────────────────────────────────
 interface KpiProps {
   label: string;
   value: string;
@@ -77,26 +78,36 @@ interface KpiProps {
   valueClass?: string;
   sub?: string;
   loading?: boolean;
+  accentColor?: string;
+  pulseDot?: boolean;
 }
 
-function KpiItem({ label, value, icon, valueClass = 'text-white', sub, loading }: KpiProps) {
+function KpiItem({ label, value, icon, valueClass = 'text-white', sub, loading, accentColor = 'from-blue-500/15', pulseDot }: KpiProps) {
   return (
-    <div className="flex flex-col gap-1 px-4 py-3 min-w-0 flex-1 border-r border-[#142238] last:border-r-0">
-      {/* icon + label row */}
-      <div className="flex items-center gap-1.5 min-w-0">
-        <span className="text-slate-500 shrink-0">{icon}</span>
-        <span className="text-[11px] font-medium text-slate-400 leading-tight whitespace-nowrap">
+    <div className="relative group bg-[#0A1628]/90 hover:bg-[#0D1D35] border border-[#162A45]/80 hover:border-blue-500/40 rounded-xl p-4 min-w-0 flex-1 transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-blue-950/40 flex flex-col justify-between overflow-hidden">
+      {/* Top subtle glow accent line */}
+      <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${accentColor} to-transparent opacity-60 group-hover:opacity-100 transition-opacity`} />
+      
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider leading-none truncate">
           {label}
         </span>
+        <div className="relative flex items-center justify-center w-7 h-7 rounded-lg bg-[#11233D] border border-blue-900/40 text-blue-400 group-hover:scale-105 group-hover:border-blue-500/50 transition-all shrink-0">
+          {icon}
+          {pulseDot && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-ping" />
+          )}
+        </div>
       </div>
-      {/* value */}
-      <p className={`text-xl font-bold tabular-nums leading-tight ${valueClass} ${loading ? 'opacity-30' : ''}`}>
-        {loading ? '—' : value}
-      </p>
-      {/* sub-label */}
-      {sub && (
-        <p className="text-[10px] text-slate-500 leading-tight">{sub}</p>
-      )}
+
+      <div>
+        <p className={`text-2xl font-bold tabular-nums tracking-tight leading-tight ${valueClass} ${loading ? 'opacity-30' : ''}`}>
+          {loading ? '—' : value}
+        </p>
+        {sub && (
+          <p className="text-[10px] text-slate-500 mt-1 font-medium leading-tight truncate">{sub}</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -111,18 +122,18 @@ function ServiceTile({
 }) {
   const ok = status === 'healthy';
   return (
-    <div className="flex items-center gap-3 px-5 py-4 flex-1 border-r border-[#142238] last:border-r-0 min-w-0">
-      <span className={ok ? 'text-risk-low' : 'text-slate-600'}>{icon}</span>
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-slate-200 leading-tight">{name}</p>
-        <p className={`text-xs font-semibold uppercase tracking-wide mt-0.5 ${ok ? 'text-risk-low' : 'text-slate-500'}`}>
-          {status ? (
-            <span className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full inline-block ${ok ? 'bg-risk-low' : 'bg-risk-critical'}`} />
-              {status}
-            </span>
-          ) : '—'}
-        </p>
+    <div className="flex items-center gap-3.5 px-4 py-3.5 rounded-xl bg-[#0A1628]/70 hover:bg-[#0D1D35]/90 border border-[#162A45]/70 hover:border-blue-500/30 transition-all duration-200 flex-1 min-w-0">
+      <div className={`p-2 rounded-lg ${ok ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'} shrink-0`}>
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold text-slate-200 leading-tight truncate">{name}</p>
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${ok ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${ok ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {status ? status : '—'}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -170,9 +181,9 @@ export default function OverviewPage() {
 
   if (loading && !summary && !error) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 gap-3">
-        <Spinner size={28} />
-        <p className="text-slate-500 text-sm">Loading dashboard…</p>
+      <div className="flex flex-col items-center justify-center py-36 gap-3">
+        <Spinner size={32} />
+        <p className="text-slate-400 text-sm font-medium animate-pulse">Initializing Fraud Monitoring Console…</p>
       </div>
     );
   }
@@ -184,135 +195,155 @@ export default function OverviewPage() {
     ? `${fraudRatePct.toFixed(2)}%`
     : '—';
   const fraudRateSub = s
-    ? `(${s.predicted_fraud_count} / ${s.total_transactions})`
+    ? `${s.predicted_fraud_count.toLocaleString('en-IN')} flagged / ${s.total_transactions.toLocaleString('en-IN')} total`
     : undefined;
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-5 animate-fade-in pb-4">
 
       {/* ── Header ──────────────────────────────────────────────────── */}
-      <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-xl font-bold text-white tracking-tight leading-tight">
-            Fraud Monitoring Console
-          </h1>
-          <p className="text-slate-400 text-sm mt-0.5">
-            Live risk posture · {s?.total_transactions?.toLocaleString('en-IN') ?? '—'} transactions scored
+      <header className="flex items-center justify-between gap-4 flex-wrap bg-[#0A1628]/60 border border-[#162A45]/60 rounded-2xl p-4 sm:p-5 backdrop-blur-sm shadow-sm">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              Fraud Monitoring Console
+            </h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              Live System Active
+            </span>
+          </div>
+          <p className="text-slate-400 text-xs sm:text-sm font-medium">
+            Real-time fraud posture analysis · <span className="text-slate-200 font-semibold">{s?.total_transactions?.toLocaleString('en-IN') ?? '—'}</span> transactions evaluated
           </p>
         </div>
-        <div className="flex items-center gap-4 shrink-0">
+
+        <div className="flex items-center gap-3 shrink-0">
           <LiveDateTime />
           <Link
             to="/transactions"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary border border-primary/40 rounded px-3 py-1.5 hover:bg-primary/10 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 border border-blue-500/50 rounded-xl px-3.5 py-2 shadow-md shadow-blue-900/30 hover:shadow-blue-500/20 transition-all duration-150"
           >
-            All Transactions <ArrowRight size={11} />
+            All Transactions <ArrowRight size={13} />
           </Link>
         </div>
       </header>
 
-      {/* ── KPI Strip ───────────────────────────────────────────────── */}
-      {/* Horizontal on md+, 2-col grid on mobile */}
-      <div className="bg-[#0B1728] border border-[#142238] rounded">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-row">
-          <KpiItem
-            label="Total Transactions"
-            value={(s?.total_transactions ?? 0).toLocaleString('en-IN')}
-            icon={<ArrowLeftRight size={13} />}
-            valueClass="text-white"
-            sub="All scored"
-            loading={!s}
-          />
-          <KpiItem
-            label="Predicted Fraud"
-            value={(s?.predicted_fraud_count ?? 0).toLocaleString('en-IN')}
-            icon={<ShieldAlert size={13} />}
-            valueClass="text-risk-critical"
-            sub="Score ≥ 0.30"
-            loading={!s}
-          />
-          <KpiItem
-            label="High + Critical"
-            value={(s?.high_critical_count ?? 0).toLocaleString('en-IN')}
-            icon={<TrendingUp size={13} />}
-            valueClass={(s?.high_critical_count ?? 0) > 0 ? 'text-risk-high' : 'text-white'}
-            sub={s ? `${((s.high_critical_count / Math.max(s.total_transactions, 1)) * 100).toFixed(1)}% of total` : undefined}
-            loading={!s}
-          />
-          <KpiItem
-            label="Review Queue"
-            value={(s?.review_queue_count ?? 0).toLocaleString('en-IN')}
-            icon={<Eye size={13} />}
-            valueClass={(s?.review_queue_count ?? 0) > 0 ? 'text-risk-medium' : 'text-white'}
-            sub="Decision = REVIEW"
-            loading={!s}
-          />
-          <KpiItem
-            label="Fraud Rate"
-            value={fraudRateLabel}
-            icon={<Percent size={13} />}
-            valueClass={
-              fraudRatePct !== null && fraudRatePct >= 10 ? 'text-risk-critical' :
-              fraudRatePct !== null && fraudRatePct >= 5  ? 'text-risk-high'     :
-              'text-white'
-            }
-            sub={fraudRateSub}
-            loading={!s}
-          />
-          <KpiItem
-            label="Expected Loss"
-            value={fmtMoney(s?.estimated_expected_loss ?? null, s?.expected_loss_currency ?? 'INR')}
-            icon={<IndianRupee size={13} />}
-            valueClass="text-white"
-            sub="Modeled estimate"
-            loading={!s}
-          />
-        </div>
+      {/* ── KPI Grid ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <KpiItem
+          label="Total Transactions"
+          value={(s?.total_transactions ?? 0).toLocaleString('en-IN')}
+          icon={<ArrowLeftRight size={15} />}
+          valueClass="text-slate-100"
+          sub="All ML-scored"
+          loading={!s}
+          accentColor="from-blue-500/40"
+        />
+        <KpiItem
+          label="Predicted Fraud"
+          value={(s?.predicted_fraud_count ?? 0).toLocaleString('en-IN')}
+          icon={<ShieldAlert size={15} />}
+          valueClass="text-red-400 font-extrabold"
+          sub="Score ≥ 0.30"
+          loading={!s}
+          accentColor="from-red-500/50"
+          pulseDot={(s?.predicted_fraud_count ?? 0) > 0}
+        />
+        <KpiItem
+          label="High + Critical"
+          value={(s?.high_critical_count ?? 0).toLocaleString('en-IN')}
+          icon={<TrendingUp size={15} />}
+          valueClass={(s?.high_critical_count ?? 0) > 0 ? 'text-orange-400 font-extrabold' : 'text-slate-200'}
+          sub={s ? `${((s.high_critical_count / Math.max(s.total_transactions, 1)) * 100).toFixed(1)}% severe risk` : undefined}
+          loading={!s}
+          accentColor="from-orange-500/50"
+        />
+        <KpiItem
+          label="Review Queue"
+          value={(s?.review_queue_count ?? 0).toLocaleString('en-IN')}
+          icon={<Eye size={15} />}
+          valueClass={(s?.review_queue_count ?? 0) > 0 ? 'text-yellow-400 font-bold' : 'text-slate-200'}
+          sub="Decision = REVIEW"
+          loading={!s}
+          accentColor="from-yellow-500/40"
+        />
+        <KpiItem
+          label="Fraud Rate"
+          value={fraudRateLabel}
+          icon={<Percent size={15} />}
+          valueClass={
+            fraudRatePct !== null && fraudRatePct >= 10 ? 'text-red-400 font-bold' :
+            fraudRatePct !== null && fraudRatePct >= 5  ? 'text-orange-400 font-bold' :
+            'text-emerald-400 font-bold'
+          }
+          sub={fraudRateSub}
+          loading={!s}
+          accentColor="from-red-500/30"
+        />
+        <KpiItem
+          label="Expected Loss"
+          value={fmtMoney(s?.estimated_expected_loss ?? null, s?.expected_loss_currency ?? 'INR')}
+          icon={<IndianRupee size={15} />}
+          valueClass="text-white font-extrabold"
+          sub="Modeled exposure"
+          loading={!s}
+          accentColor="from-cyan-500/40"
+        />
       </div>
 
       {/* ── Two-column analytical area ───────────────────────────────── */}
-      {/* Mobile: stacked | lg: 1/3 LEFT + 2/3 RIGHT */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
 
         {/* LEFT — Risk Distribution */}
-        <div className="lg:col-span-1 bg-[#0B1728] border border-[#142238] rounded">
-          <div className="px-4 py-3 border-b border-[#142238]">
-            <h2 className="text-sm font-semibold text-white">Risk Distribution</h2>
-            <p className="text-xs text-slate-500 mt-0.5">All scored transactions</p>
+        <div className="lg:col-span-1 bg-[#0A1628]/90 border border-[#162A45] rounded-2xl overflow-hidden shadow-lg">
+          <div className="px-5 py-4 border-b border-[#162A45]/80 bg-[#081220]/60 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-white tracking-tight">Risk Distribution</h2>
+              <p className="text-[11px] text-slate-400 mt-0.5">Scored transaction volume breakdown</p>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wider">
+              Live Breakdown
+            </span>
           </div>
-          <div className="p-4">
+          <div className="p-5">
             {s ? (
               <RiskDistributionBar counts={s.risk_level_counts} />
             ) : (
-              <div className="flex items-center justify-center py-16">
-                <Spinner size={22} />
+              <div className="flex items-center justify-center py-20">
+                <Spinner size={24} />
               </div>
             )}
           </div>
         </div>
 
         {/* RIGHT — High-Risk Transactions table */}
-        <div className="lg:col-span-2 bg-[#0B1728] border border-[#142238] rounded">
-          <div className="px-4 py-3 border-b border-[#142238] flex items-center justify-between gap-3">
+        <div className="lg:col-span-2 bg-[#0A1628]/90 border border-[#162A45] rounded-2xl overflow-hidden shadow-lg">
+          <div className="px-5 py-4 border-b border-[#162A45]/80 bg-[#081220]/60 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-white">High-Risk Transactions</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Latest HIGH and CRITICAL scores
+              <h2 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+                High-Risk Transactions
+                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-red-500/15 text-red-400 border border-red-500/30">
+                  HIGH &amp; CRITICAL
+                </span>
+              </h2>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Priority items flagged by Random Forest model for immediate analyst review
               </p>
             </div>
             <Link
               to="/transactions?risk=HIGH,CRITICAL"
-              className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1 shrink-0"
+              className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40"
             >
-              View all <ArrowRight size={11} />
+              View all <ArrowRight size={12} />
             </Link>
           </div>
 
           {/* Table header */}
           {highRisk && highRisk.length > 0 && (
-            <div className="hidden sm:grid grid-cols-[2fr_1.2fr_0.8fr_1fr_0.7fr_0.9fr_1.1fr] px-4 py-2 border-b border-[#142238] gap-3">
-              {['Transaction ID', 'Customer', 'Type', 'Amount', 'Score', 'Risk', 'Time'].map(h => (
-                <span key={h} className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{h}</span>
+            <div className="hidden sm:grid grid-cols-[2fr_1.3fr_0.9fr_1.1fr_0.8fr_1fr_1.1fr] px-5 py-2.5 bg-[#06101F]/80 border-b border-[#162A45]/80 gap-3">
+              {['Transaction ID', 'Customer', 'Method', 'Amount', 'Score', 'Risk Tier', 'Time'].map(h => (
+                <span key={h} className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{h}</span>
               ))}
             </div>
           )}
@@ -320,42 +351,44 @@ export default function OverviewPage() {
           {/* Rows */}
           <div>
             {!highRisk ? (
-              <div className="flex items-center justify-center py-10">
-                <Spinner size={22} />
+              <div className="flex items-center justify-center py-16">
+                <Spinner size={24} />
               </div>
             ) : highRisk.length === 0 ? (
-              <div className="py-10 text-center">
-                <ShieldAlert size={22} className="mx-auto text-slate-700 mb-2" />
-                <p className="text-slate-500 text-sm">No high-risk transactions</p>
+              <div className="py-16 text-center">
+                <ShieldCheck size={28} className="mx-auto text-emerald-400/60 mb-2" />
+                <p className="text-slate-300 text-sm font-semibold">No high-risk transactions detected</p>
+                <p className="text-slate-500 text-xs mt-0.5">All scored transactions are within acceptable risk parameters.</p>
               </div>
             ) : (
-              <div className="divide-y divide-[#142238]">
+              <div className="divide-y divide-[#162A45]/60">
                 {highRisk.map((t) => {
                   const prob = t.fraud_probability ?? 0;
                   const probPct = (prob * 100).toFixed(1) + '%';
                   const probClass =
-                    prob >= 0.7 ? 'text-risk-critical font-bold' :
-                    prob >= 0.5 ? 'text-risk-high font-semibold' :
-                                  'text-risk-medium';
+                    prob >= 0.85 ? 'text-red-400 font-extrabold drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]' :
+                    prob >= 0.6  ? 'text-orange-400 font-bold' :
+                                   'text-yellow-400 font-semibold';
 
                   return (
                     <Link
                       key={t.id}
                       to={`/transactions/${encodeURIComponent(t.transaction_id)}`}
-                      className="block hover:bg-white/[0.03] transition-colors"
+                      className="block group hover:bg-[#0E203B]/80 transition-colors"
                     >
                       {/* Desktop row */}
-                      <div className="hidden sm:grid grid-cols-[2fr_1.2fr_0.8fr_1fr_0.7fr_0.9fr_1.1fr] px-4 py-3 gap-3 items-center">
-                        <span className="font-mono text-xs text-slate-300 truncate">
+                      <div className="hidden sm:grid grid-cols-[2fr_1.3fr_0.9fr_1.1fr_0.8fr_1fr_1.1fr] px-5 py-3.5 gap-3 items-center">
+                        <span className="font-mono text-xs font-semibold text-blue-300 group-hover:text-blue-200 transition-colors truncate flex items-center gap-1.5">
+                          <span className="w-1 h-3 rounded-full bg-blue-500/40 group-hover:bg-blue-400 transition-colors" />
                           {t.transaction_id}
                         </span>
-                        <span className="font-mono text-xs text-slate-400 truncate">
+                        <span className="font-mono text-xs text-slate-400 group-hover:text-slate-300 transition-colors truncate">
                           {t.customer_id}
                         </span>
                         <span className="text-xs text-slate-400 capitalize">
                           {t.payment_method ?? '—'}
                         </span>
-                        <span className="text-sm font-semibold tabular-nums text-slate-200">
+                        <span className="text-sm font-bold tabular-nums text-slate-100">
                           {new Intl.NumberFormat('en-IN', {
                             style: 'currency', currency: t.currency, maximumFractionDigits: 0,
                           }).format(t.amount)}
@@ -363,21 +396,21 @@ export default function OverviewPage() {
                         <span className={`text-sm tabular-nums ${probClass}`}>
                           {probPct}
                         </span>
-                        <span>
-                          <Badge variant={riskLevelVariant(t.risk_level)} className="text-[10px] px-1.5 py-0">
+                        <div>
+                          <Badge variant={riskLevelVariant(t.risk_level)} className="text-[10px] px-2 py-0.5 font-bold shadow-sm">
                             {t.risk_level}
                           </Badge>
-                        </span>
-                        <span className="text-xs text-slate-500 tabular-nums">
+                        </div>
+                        <span className="text-xs text-slate-400 tabular-nums">
                           {fmtTimestampShort(t.scored_at ?? t.created_at)}
                         </span>
                       </div>
 
                       {/* Mobile card row */}
-                      <div className="sm:hidden px-4 py-3 space-y-1">
+                      <div className="sm:hidden px-4 py-3.5 space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-xs text-slate-300 truncate flex-1">{t.transaction_id}</span>
-                          <Badge variant={riskLevelVariant(t.risk_level)} className="text-[10px] px-1.5 py-0 shrink-0">
+                          <span className="font-mono text-xs font-bold text-blue-300 truncate flex-1">{t.transaction_id}</span>
+                          <Badge variant={riskLevelVariant(t.risk_level)} className="text-[10px] px-2 py-0.5 font-bold shrink-0">
                             {t.risk_level}
                           </Badge>
                         </div>
@@ -387,7 +420,7 @@ export default function OverviewPage() {
                         </div>
                         <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
                           <span className="capitalize">{t.payment_method ?? '—'} · {t.country ?? '—'}</span>
-                          <span className="tabular-nums font-semibold text-slate-300">
+                          <span className="tabular-nums font-bold text-slate-200">
                             {new Intl.NumberFormat('en-IN', {
                               style: 'currency', currency: t.currency, maximumFractionDigits: 0,
                             }).format(t.amount)}
@@ -404,44 +437,46 @@ export default function OverviewPage() {
       </div>
 
       {/* ── System Status ────────────────────────────────────────────── */}
-      <div className="bg-[#0B1728] border border-[#142238] rounded">
-        <div className="px-4 py-2.5 border-b border-[#142238]">
-          <h2 className="text-sm font-semibold text-white">System Status</h2>
+      <div className="bg-[#0A1628]/90 border border-[#162A45] rounded-2xl p-4 sm:p-5 shadow-lg space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+            System Infrastructure Status
+          </h2>
+          <span className="text-[11px] text-slate-400 font-medium">All core services monitored</span>
         </div>
-        <div className="grid grid-cols-2 md:flex md:flex-row divide-y divide-[#142238] md:divide-y-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <ServiceTile
-            icon={<Activity size={20} />}
-            name="API"
+            icon={<Activity size={18} />}
+            name="FastAPI Services"
             status={health?.status ?? null}
           />
           <ServiceTile
-            icon={<Database size={20} />}
-            name="Database"
+            icon={<Database size={18} />}
+            name="PostgreSQL Storage"
             status={health?.database ?? null}
           />
           <ServiceTile
-            icon={<Server size={20} />}
-            name="Redis"
+            icon={<Server size={18} />}
+            name="Redis Rate Limiter"
             status={health?.redis ?? null}
           />
           <ServiceTile
-            icon={<Cpu size={20} />}
-            name="ML Model"
+            icon={<Cpu size={18} />}
+            name="ML Fraud Engine"
             status={health?.ml_model ?? null}
           />
         </div>
       </div>
 
       {/* ── Footer note ───────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 pt-1">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-slate-500 px-1 pt-1">
         <span className="flex items-center gap-1.5">
-          <ShieldAlert size={11} className="text-slate-700" />
-          Fraud predictions are ML model outputs and require analyst verification.
+          <ShieldAlert size={12} className="text-slate-500" />
+          Fraud predictions are generated via Random Forest ML model and require analyst verification before action.
         </span>
-        <span>·</span>
-        <span>
-          Total risk exposure:{' '}
-          <span className="text-slate-500">
+        <span className="font-medium text-slate-400">
+          Total Risk Exposure:{' '}
+          <span className="text-white font-bold">
             {fmtMoney(s?.estimated_expected_loss ?? null, s?.expected_loss_currency ?? 'INR')}
           </span>
         </span>
