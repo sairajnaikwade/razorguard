@@ -144,8 +144,97 @@ function FeatureChip({ icon, label, sub }: { icon: React.ReactNode; label: strin
   );
 }
 
+// ─── Splash Intro Component ──────────────────────────────────────────────────
+function SplashIntro({ onComplete }: { onComplete: () => void }) {
+  const [fadingOut, setFadingOut] = useState(false);
+
+  useEffect(() => {
+    // Fade out after ~2.8s
+    const fadeTimer = setTimeout(() => {
+      setFadingOut(true);
+    }, 2800);
+
+    // Complete transition after ~3.3s
+    const completeTimer = setTimeout(() => {
+      onComplete();
+    }, 3300);
+
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(completeTimer);
+    };
+  }, [onComplete]);
+
+  const handleSkip = () => {
+    setFadingOut(true);
+    setTimeout(onComplete, 400);
+  };
+
+  return (
+    <div
+      onClick={handleSkip}
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#040A15] text-white overflow-hidden cursor-pointer select-none transition-all duration-500 ease-out ${
+        fadingOut ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'
+      }`}
+    >
+      {/* Background ambient lighting */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[650px] h-[350px] sm:h-[650px] rounded-full bg-blue-600/12 blur-[100px] sm:blur-[160px] animate-pulse" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] sm:w-[380px] h-[220px] sm:h-[380px] rounded-full bg-cyan-500/10 blur-[60px] sm:blur-[100px]" />
+      </div>
+
+      {/* Cyber Grid Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e3e6415_1px,transparent_1px),linear-gradient(to_bottom,#1e3e6415_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
+
+      {/* Central Content Container */}
+      <div className="relative z-10 flex flex-col items-center px-4 max-w-lg w-full text-center">
+        {/* Shield Logo with glowing pulse */}
+        <div className="relative mb-6 sm:mb-8 flex items-center justify-center">
+          {/* Animated Blue Glow Rings */}
+          <div className="absolute w-36 h-36 sm:w-52 sm:h-52 rounded-full bg-blue-500/25 blur-2xl logo-glow-outer" />
+          <div className="absolute w-28 h-28 sm:w-40 sm:h-40 rounded-full bg-cyan-400/20 blur-xl logo-glow-inner" />
+
+          {/* Shield Asset */}
+          <div className="relative z-10 w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 flex items-center justify-center animate-splash-shield">
+            <img
+              src="/razorguard-shield.png"
+              alt="RazorGuard Shield"
+              className="w-full h-full object-contain filter drop-shadow-[0_0_25px_rgba(59,130,246,0.65)]"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = '/razorguard-full.png';
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Title: RAZORGUARD */}
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-[0.25em] bg-gradient-to-r from-blue-400 via-sky-100 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(59,130,246,0.45)] uppercase mb-3.5 animate-splash-title">
+          RAZORGUARD
+        </h1>
+
+        {/* Subtitle: AI-POWERED FRAUD INTELLIGENCE */}
+        <p className="text-xs sm:text-sm font-semibold tracking-[0.3em] text-blue-400/90 uppercase text-center max-w-xs sm:max-w-md animate-splash-subtitle">
+          AI-Powered Fraud Intelligence
+        </p>
+
+        {/* Progress bar */}
+        <div className="mt-10 sm:mt-12 w-48 sm:w-64 h-0.5 bg-blue-950/80 rounded-full overflow-hidden relative">
+          <div className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-600 rounded-full animate-splash-progress" />
+        </div>
+
+        {/* Skip note */}
+        <p className="mt-4 text-[9px] sm:text-[10px] tracking-widest text-slate-500/60 uppercase">
+          Click anywhere to skip
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main LoginPage ─────────────────────────────────────────────────────────
 export default function LoginPage() {
+  const [showSplash, setShowSplash] = useState(true);
   const [username, setUsername]     = useState('');
   const [password, setPassword]     = useState('');
   const [showPw, setShowPw]         = useState(false);
@@ -193,11 +282,13 @@ export default function LoginPage() {
   const inputError   = `${inputBase} border-red-500/50 focus:border-red-500/70 focus:ring-red-500/20`;
 
   return (
-    <div className="relative min-h-screen min-h-dvh bg-[#050D1A] flex flex-col items-center justify-center p-3 sm:p-4 overflow-hidden">
-      {/* Canvas background */}
-      <CyberBackground />
+    <>
+      {showSplash && <SplashIntro onComplete={() => setShowSplash(false)} />}
+      <div className="relative min-h-screen min-h-dvh bg-[#050D1A] flex flex-col items-center justify-center p-3 sm:p-4 overflow-hidden">
+        {/* Canvas background */}
+        <CyberBackground />
 
-      {/* Radial glow blobs - responsive sizing */}
+        {/* Radial glow blobs - responsive sizing */}
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
         <div className="absolute top-[-15%] left-[50%] -translate-x-1/2 w-[400px] sm:w-[700px] h-[300px] sm:h-[500px] rounded-full bg-blue-600/7 blur-[80px] sm:blur-[140px]" />
         <div className="absolute bottom-[-20%] left-[-10%] w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] rounded-full bg-indigo-700/5 blur-[60px] sm:blur-[100px]" />
@@ -382,5 +473,6 @@ export default function LoginPage() {
         }
       `}</style>
     </div>
+    </>
   );
 }
