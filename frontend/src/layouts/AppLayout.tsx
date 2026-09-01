@@ -74,7 +74,7 @@ function BrandMark() {
           className="w-full h-full object-contain"
           onError={(e) => {
             e.currentTarget.onerror = null;
-            e.currentTarget.src = '/razorguard-shield-icon.svg';
+            e.currentTarget.src = '/razorguard-full.png';
           }}
         />
       </div>
@@ -237,7 +237,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               src="/razorguard-shield.png"
               alt=""
               className="w-5 h-5 object-contain"
-              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/razorguard-shield-icon.svg'; }}
+              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/razorguard-full.png'; }}
               aria-hidden
             />
             <span className="font-bold text-sm text-white">
